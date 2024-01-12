@@ -651,6 +651,29 @@ bool checkForParallel(vector<MD_Tree>& forest, int currentLeft, int currentRight
     return true;
 }
 
+/**
+* A helper method for the construction of the modular decompositon
+* tree in the assembly step of the algorithm.
+*
+* @param currentNode The node to be added to the MD tree.
+* @param currentModuleType The type of the current module
+* @param lastNode The last node that was added to the tree.
+*/
+void addToMDTree(TreeNode*& currentNode, Label& currentModuleType, TreeNode*& lastNode) {
+    if (currentNode->label == currentModuleType && currentNode->child != nullptr) {
+        setSibling(lastNode, currentNode->child);
+        lastNode = currentNode->child;
+        while (lastNode->sibling != nullptr) {
+            setSibling(lastNode, lastNode->sibling);
+            lastNode = lastNode->sibling;
+        }
+    }
+    else {
+        setSibling(lastNode, currentNode);
+        lastNode = currentNode;
+    }
+}
+
 
 /**
 * Performs the first step of the algorithm, the recursion. In this step, the vertices of
@@ -795,6 +818,7 @@ vector<MD_Tree> promotion(MD_Tree& forest) {
 * @return The final assembled MD-tree.
 */
 MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
+
     MD_Tree pivotTree = MD_Tree(new TreeNode(pivot));
     int pivotIndex = 1;
     while (pivotIndex < forest.size() && isConnectedToPivot(forest[pivotIndex].root, 
@@ -805,11 +829,12 @@ MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
     insertLeftRightPointers(forest, graph);
 
     TreeNode* lastModule = new TreeNode(pivot);
-    vector<bool> alreadyIncluded(forest.size(), false);
-    alreadyIncluded[pivotIndex] = true;
 
     int currentLeft = pivotIndex;
     int currentRight = pivotIndex + 1;
+    int includedLeft = pivotIndex;
+    int includedRight = pivotIndex + 1;
+
     do {
         bool addedRight = false;
         bool addedLeft = false;
@@ -855,27 +880,16 @@ MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
         TreeNode* moduleNode = new TreeNode(moduleType);
         setChild(moduleNode, lastModule);
         TreeNode* lastNode = lastModule;
-        for (int i = currentLeft; i < currentRight; i++) {
 
-            // Besser: Pointer 'altes Links' und 'altes Rechts' anstatt alreadyIncluded vector speichern
-
-            if (!alreadyIncluded[i]) {
-                TreeNode* currentNode = forest[i].root;
-                if (currentNode->label == moduleType && currentNode->child != nullptr) {
-                    setSibling(lastNode, currentNode->child);
-                    lastNode = currentNode->child;
-                    while (lastNode->sibling != nullptr) {
-                        setSibling(lastNode, lastNode->sibling);
-                        lastNode = lastNode->sibling;
-                    }
-                }
-                else {
-                    setSibling(lastNode, currentNode);
-                    lastNode = currentNode;
-                }
-                alreadyIncluded[i] = true;
-            }
+        for (int i = currentLeft; i < includedLeft; i++) {
+            addToMDTree(forest[i].root, moduleType, lastNode);
         }
+        for (int i = includedRight; i < currentRight; i++) {
+            addToMDTree(forest[i].root, moduleType, lastNode);
+        }
+
+        includedLeft = currentLeft;
+        includedRight = currentRight;
         lastModule = moduleNode;
 
     } while (currentLeft > 0 || currentRight < forest.size());
