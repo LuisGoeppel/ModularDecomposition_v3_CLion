@@ -35,6 +35,86 @@ string readFile(const string& filename) {
     return oss.str();
 }
 
+
+/**
+* Normally, the modular decomposition for the subgraphs would be performed recursively.
+* However, as long as the algorithm does not work completely, this helper function returns
+* the hard-coded "recursively" computed MD_Trees for a specific example. This allows the
+* algorithm to be tested, even though it is not completely finished.
+*
+* @param subgraph The subgraph of which the MD_Tree should be recursively computed
+* @return the hard-coded MD_Tree for specific subgraphs
+*/
+MD_Tree getRecursiveComputation(const Graph& subgraph)
+{
+    if (subgraph.getAdjlist().size() == 4) {
+
+        TreeNode* nodeA = new TreeNode(0);
+        TreeNode* nodeC = new TreeNode(1);
+        TreeNode* nodeD = new TreeNode(2);
+        TreeNode* nodeE = new TreeNode(3);
+
+        TreeNode* node1 = new TreeNode(SERIES);
+        TreeNode* node0 = new TreeNode(PARALLEL);
+        TreeNode* nodeRoot = new TreeNode(SERIES);
+
+        setChild(nodeRoot, nodeA);
+        setChild(node0, nodeC);
+        setChild(node1, nodeD);
+
+        setSibling(nodeC, node1);
+        setSibling(nodeA, node0);
+        setSibling(nodeD, nodeE);
+
+        return MD_Tree(nodeRoot);
+    }
+
+    if (subgraph.getAdjlist().size() == 12) {
+        TreeNode* nodeB = new TreeNode(0);
+        TreeNode* nodeJ = new TreeNode(1);
+        TreeNode* nodeF = new TreeNode(2);
+        TreeNode* nodeG = new TreeNode(3);
+        TreeNode* nodeH = new TreeNode(4);
+        TreeNode* nodeI = new TreeNode(5);
+        TreeNode* nodeK = new TreeNode(6);
+        TreeNode* nodeL = new TreeNode(7);
+        TreeNode* nodeM = new TreeNode(8);
+        TreeNode* nodeN = new TreeNode(9);
+        TreeNode* nodeP = new TreeNode(10);
+        TreeNode* nodeQ = new TreeNode(11);
+
+        TreeNode* nodeRoot = new TreeNode(PARALLEL);
+        TreeNode* node1Left = new TreeNode(SERIES);
+        TreeNode* node1Mid = new TreeNode(SERIES);
+        TreeNode* node1Right = new TreeNode(SERIES);
+        TreeNode* node0 = new TreeNode(PARALLEL);
+
+        setChild(nodeRoot, node1Left);
+        setChild(node1Mid, nodeK);
+        setChild(node1Right, nodeQ);
+        setChild(node0, nodeN);
+
+        setChild(node1Left, nodeI);
+        setSibling(nodeI, nodeG);
+        setSibling(nodeG, nodeH);
+        setSibling(nodeH, nodeF);
+
+        setSibling(nodeK, nodeL);
+        setSibling(nodeQ, nodeM);
+        setSibling(nodeN, nodeP);
+        setSibling(node1Left, nodeB);
+        setSibling(nodeB, node1Mid);
+        setSibling(node1Mid, nodeJ);
+        setSibling(nodeJ, node1Right);
+        setSibling(nodeM, node0);
+
+        return MD_Tree(nodeRoot);
+    }
+
+    TreeNode* root = new TreeNode(0);
+    return MD_Tree(root);
+}
+
 /**
 * Returns the incident active edges for a given node.
 *
@@ -58,19 +138,32 @@ unordered_set<int> getIncidentActiveEdges(const vector<pair<int, int>>& activeEd
 /**
 * Prints a given modular - decomposition forest on the command line
 *
-* @param forest The forest to be printed, passed by its first MD_Tree
+* @param current The forest to be printed, passed by its first MD_Tree
 */
-void printForest(const MD_Tree& forest) {
-    const MD_Tree* currentTree = &forest;
+void printForest(const MD_Tree* current) {
     int treeCount = 1;
 
-    while (currentTree != nullptr) {        
-        cout << "MD Tree " << treeCount << ": " <<endl;
-        printTree(currentTree->root);
-        std::cout << std::endl;
+    while (current != nullptr) {
+        cout << "MD Tree " << treeCount << ": " << endl;
+        TreeNode* treeRoot = current->root;
+        printTree(treeRoot);
+        cout << endl;
 
+        current = current->right;
         treeCount++;
-        currentTree = currentTree->right;
+    }
+}
+
+/**
+* Prints a given modular - decomposition forest on the command line
+*
+* @param current The forest to be printed, passed by a vector of its trees
+*/
+void printForest(const vector<MD_Tree>& forest) {
+    for (int i = 0; i < forest.size(); i++) {
+        cout << "MD Tree " << (i + 1) << ": " << endl;
+        printTree(forest[i].root);
+        cout << endl;
     }
 }
 
@@ -147,7 +240,7 @@ void markChildren(TreeNode* node, bool markLeft) {
 * @param X A set containing all children that the root of the new tree should have
 * @param label The label of the new tree's root
 */
-MD_Tree* constructTree(vector<TreeNode*> X, Label label) {
+MD_Tree constructTree(vector<TreeNode*> X, Label label) {
     TreeNode* T;
     if (X.size() == 1) {
         T = X[0];
@@ -166,7 +259,7 @@ MD_Tree* constructTree(vector<TreeNode*> X, Label label) {
         }
         X[X.size() - 1]->sibling = nullptr;
     }
-    return &MD_Tree(T);
+    return MD_Tree(T);
 }
 
 /**
@@ -196,8 +289,8 @@ void refineByNonPrimeNode(MD_Tree& forest, TreeNode* p,
     }
 
     if (A.size() > 0 && B.size() > 0) {
-        MD_Tree* Ta = constructTree(A, p->label);
-        MD_Tree* Tb = constructTree(B, p->label);
+        MD_Tree* Ta = new MD_Tree(constructTree(A, p->label));
+        MD_Tree* Tb = new MD_Tree(constructTree(B, p->label));
 
         if (p->parent == nullptr) {
             MD_Tree* currentTree = getCorrespondingTree(&forest, p);
@@ -227,7 +320,6 @@ void refineByNonPrimeNode(MD_Tree& forest, TreeNode* p,
         markNodeAndAncestors(Tb->root, isLeftSplit);
     }
 }
-
 
 
 /**
@@ -363,37 +455,32 @@ void deleteMarks(TreeNode* node) {
 *   - Whenever a root as only one child, that child will take the place of the root.
 *   - All markings will be delted.
 *
-* @param forest The forest to be cleaned up, passed by its first element.
+* @param forest The forest to be cleaned up.
 */
-void cleanUp(MD_Tree& forest) {
-
-    MD_Tree* currentTree = &forest;
-    while (currentTree != nullptr) {
-        if (currentTree->root->markedLeft || currentTree->root->markedRight) {
-            if (currentTree->root->child == nullptr) {
-                if (currentTree->root->label != LEAF) {
-                    setNeighbor(currentTree->left, currentTree->right);
-                    if (currentTree->left == nullptr) {
-                        forest = *currentTree->right;
-                    }
+void cleanUp(vector<MD_Tree>& forest) {
+    vector<MD_Tree> newTreeList;
+    for (MD_Tree& tree : forest) {
+        if (tree.root->markedLeft || tree.root->markedRight) {
+            if (tree.root->child != nullptr) {
+                if (tree.root->child->sibling == nullptr) {
+                    newTreeList.push_back(MD_Tree(tree.root->child));
+                }
+                else {
+                    newTreeList.push_back(MD_Tree(tree.root));
                 }
             }
-            else if (currentTree->root->child->sibling == nullptr) {
-                MD_Tree newTree = MD_Tree(currentTree->root->child);
-                setNeighbor(currentTree->left, &newTree);
-                setNeighbor(&newTree, currentTree->right);
-                if (currentTree->left == nullptr) {
-                    forest = newTree;
-                }
+            else if (tree.root->label == LEAF) {
+                newTreeList.push_back(MD_Tree(tree.root));
             }
         }
-        currentTree = currentTree->right;
+        else {
+            newTreeList.push_back(MD_Tree(tree.root));
+        }
     }
-    MD_Tree* tree = &forest;
-    while (tree != nullptr) {
-        deleteMarks(tree->root);
-        tree = tree->right;
+    for (MD_Tree& tree : newTreeList) {
+        deleteMarks(tree.root);
     }
+    forest = newTreeList;
 }
 
 /**
@@ -440,22 +527,18 @@ void insertIndex(TreeNode* node, vector<int>& indices, int index) {
 * Computes a list that provides information about every vertex in the graph:
 * The index of the module it belongs to at the start of the assembly-process.
 *
-* @param forest The MD-forest, passed by its first element
+* @param forest The MD-forest
 * @param graphSize The number of elements in the graph.
 * @return A list that contains the searched information.
 */
-vector<int> getMaxModuleIndices(const MD_Tree& forest, int graphSize) {
+vector<int> getMaxModuleIndices(const vector<MD_Tree>& forest, int graphSize) {
     vector<int> indices(graphSize, -1);
-    int indexCount = 0;
-    const MD_Tree* currentTree = &forest;
-
-    while (currentTree != nullptr) {
-        insertIndex(currentTree->root, indices, indexCount);
-        indexCount++;
-        currentTree = currentTree->right;
+    for (int i = 0; i < forest.size(); i++) {
+        insertIndex(forest[i].root, indices, i);
     }
     return indices;
 }
+
 
 /**
 * Creates a large list of adajencies that contains all adjacencies of the elements in a given list.
@@ -482,9 +565,9 @@ vector<int> getTotalAdjacencyList(const vector<int>& vertices, const Graph& grap
 *
 * @param forest Contains the list of MD-trees.
 * @param graph The graph.
-* @param n The amount of elements in the forest
 */
-void insertLeftRightPointers(MD_Tree& forest, const Graph& graph, int n) {
+void insertLeftRightPointers(vector<MD_Tree>& forest, const Graph& graph) {
+    int n = forest.size();
     vector<int> maxModuleIndices = getMaxModuleIndices(forest, graph.getAdjlist().size());
     vector<vector<bool>> connections(n, vector<bool>(n, false));
 
@@ -492,7 +575,7 @@ void insertLeftRightPointers(MD_Tree& forest, const Graph& graph, int n) {
     // Nach dem Bestimmen der Left/Right Pointer genau diese Einträge danach wieder auf false
 
     for (int i = 0; i < n; i++) {
-        vector<int> vertices = getPreOrderLeafs(forest.treeList[i].root);
+        vector<int> vertices = getPreOrderLeafs(forest[i].root);
         vector<int> totalAdjacencies = getTotalAdjacencyList(vertices, graph);
         for (int j = 0; j < totalAdjacencies.size(); j++) {
             int connectedModule = maxModuleIndices[totalAdjacencies[j]];
@@ -517,8 +600,8 @@ void insertLeftRightPointers(MD_Tree& forest, const Graph& graph, int n) {
         // Iteration über 'true' Werte is okay (bezogen auf Linearzeit), Iteration über 'false' Einträge nicht.
         // Speichere den maximalen 'true' Wert mit ab und verwende diesen für den 'Right' pointer
 
-        forest.treeList[i].leftIndex = leftPointer;
-        forest.treeList[i].rightIndex = rightPointer;
+        forest[i].leftIndex = leftPointer;
+        forest[i].rightIndex = rightPointer;
     }
 }
 
@@ -547,15 +630,15 @@ bool isConnectedToPivot(TreeNode* node, const vector<int>& pivotAdj) {
 * @param currentRight The right index of the current module.
 * @return if the next module is parallel.
 */
-bool checkForParallel(MD_Tree& forest, int currentLeft, int currentRight) {
-    if (currentRight >= forest.treeList.size()) {
+bool checkForParallel(vector<MD_Tree>& forest, int currentLeft, int currentRight) {
+    if (currentRight >= forest.size()) {
         return false;
     }
     int i = currentRight;
     currentRight++;
     while (i < currentRight) {
-        int leftPointer = forest.treeList[i].leftIndex;
-        int rightPointer = forest.treeList[i].rightIndex;
+        int leftPointer = forest[i].leftIndex;
+        int rightPointer = forest[i].rightIndex;
 
         if (leftPointer < currentLeft) {
             return false;
@@ -581,12 +664,13 @@ bool checkForParallel(MD_Tree& forest, int currentLeft, int currentRight) {
 *   after the method has terminated
 * @return The resulting MD_Forest (list of MD_Trees)
 */
-MD_Tree& recursion(const Graph& graph, int pivot, vector<pair<int, int>>& activeEdges) {
+MD_Tree recursion(const Graph& graph, int pivot, vector<pair<int, int>>& activeEdges) {
     int currentIndex = 0;
     vector<vector<int>> adjlist = graph.getAdjlist();
     vector<unordered_set<int>> N;
     unordered_set<int> remainingNodes;
-    MD_Tree output(nullptr);
+    MD_Tree* currentTree = nullptr;
+    MD_Tree* output = nullptr;
 
     do {
         unordered_set<int> currentSet;
@@ -619,9 +703,17 @@ MD_Tree& recursion(const Graph& graph, int pivot, vector<pair<int, int>>& active
 
             vector<int> subgraphIndexMapping;
             Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-            MD_Tree tree = getModularDecomposition(subgraph);
-            updateTreeValues(tree.root, subgraphIndexMapping);
-            output.treeList.push_back(tree);
+            MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
+            updateTreeValues(tree->root, subgraphIndexMapping);
+
+            if (currentTree == nullptr) {
+                currentTree = tree;
+                output = tree;
+            }
+            else {
+                setNeighbor(currentTree, tree);
+                currentTree = tree;
+            }
         }
         N.push_back(currentSet);
         currentIndex++;
@@ -629,11 +721,19 @@ MD_Tree& recursion(const Graph& graph, int pivot, vector<pair<int, int>>& active
 
     vector<int> subgraphIndexMapping;
     Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-    MD_Tree tree = getModularDecomposition(subgraph);
-    updateTreeValues(tree.root, subgraphIndexMapping);
-    output.treeList.push_back(tree);
+    MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
+    updateTreeValues(tree->root, subgraphIndexMapping);
+    
+    if (currentTree == nullptr) {
+        currentTree = tree;
+        output = tree;
+    }
+    else {
+        setNeighbor(currentTree, tree);
+        currentTree = tree;
+    }
 
-    return output;
+    return *output;
 }
 
 /**
@@ -671,15 +771,18 @@ void refinement(const Graph& graph, int previousPivot, MD_Tree& forest,
 * see the algorithm description.
 *
 * @param forest The MD_Forest to execute promotion on.
+* @return The promoted forest as a vector of MD_Trees
 */
-void promotion(MD_Tree& forest) {
+vector<MD_Tree> promotion(MD_Tree& forest) {
     vector<MD_Tree> newTreeList;
-    for (MD_Tree& tree : forest.treeList) {
-        vector<MD_Tree> promotedList = getPromotedTree(tree.root);
+    MD_Tree* current = &forest;
+    while (current != nullptr) {
+        vector<MD_Tree> promotedList = getPromotedTree(current->root);
         newTreeList.insert(newTreeList.end(), promotedList.begin(), promotedList.end());
+        current = current->right;
     }
-    forest.treeList = newTreeList;
-    cleanUp(forest);
+    cleanUp(newTreeList);
+    return newTreeList;
 }
 
 /**
@@ -691,18 +794,18 @@ void promotion(MD_Tree& forest) {
 * @param pivot The previously chosen pivot element.
 * @return The final assembled MD-tree.
 */
-MD_Tree assembly(MD_Forest& forest, const Graph& graph, int pivot) {
+MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
     MD_Tree pivotTree = MD_Tree(new TreeNode(pivot));
     int pivotIndex = 1;
-    while (pivotIndex < forest.treeList.size() && isConnectedToPivot(forest.
-        treeList[pivotIndex].root, graph.getAdjlist()[pivot])) {
+    while (pivotIndex < forest.size() && isConnectedToPivot(forest[pivotIndex].root, 
+        graph.getAdjlist()[pivot])) {
         pivotIndex++;
     }
-    forest.treeList.insert(forest.treeList.begin() + pivotIndex, pivotTree);
+    forest.insert(forest.begin() + pivotIndex, pivotTree);
     insertLeftRightPointers(forest, graph);
 
     TreeNode* lastModule = new TreeNode(pivot);
-    vector<bool> alreadyIncluded(forest.treeList.size(), false);
+    vector<bool> alreadyIncluded(forest.size(), false);
     alreadyIncluded[pivotIndex] = true;
 
     int currentLeft = pivotIndex;
@@ -727,8 +830,8 @@ MD_Tree assembly(MD_Forest& forest, const Graph& graph, int pivot) {
             int currentMaxModule = maxModuleIndices.front();
             maxModuleIndices.pop();
 
-            int leftPointer = forest.treeList[currentMaxModule].leftIndex;
-            int rightPointer = forest.treeList[currentMaxModule].rightIndex;
+            int leftPointer = forest[currentMaxModule].leftIndex;
+            int rightPointer = forest[currentMaxModule].rightIndex;
 
             if (leftPointer < currentLeft) {
                 currentLeft = leftPointer;
@@ -757,7 +860,7 @@ MD_Tree assembly(MD_Forest& forest, const Graph& graph, int pivot) {
             // Besser: Pointer 'altes Links' und 'altes Rechts' anstatt alreadyIncluded vector speichern
 
             if (!alreadyIncluded[i]) {
-                TreeNode* currentNode = forest.treeList[i].root;
+                TreeNode* currentNode = forest[i].root;
                 if (currentNode->label == moduleType && currentNode->child != nullptr) {
                     setSibling(lastNode, currentNode->child);
                     lastNode = currentNode->child;
@@ -775,7 +878,7 @@ MD_Tree assembly(MD_Forest& forest, const Graph& graph, int pivot) {
         }
         lastModule = moduleNode;
 
-    } while (currentLeft > 0 || currentRight < forest.treeList.size());
+    } while (currentLeft > 0 || currentRight < forest.size());
 
     return MD_Tree(lastModule);
 }
@@ -830,13 +933,28 @@ MD_Tree getModularDecomposition(const Graph& graph) {
     }
 
     if (graph.isConnected()) {
-        int pivot = graph.getAdjlist().size() > 5 ? 5 : 0;
+        int pivot = 0;
         vector<pair<int, int>> activeEdges;
 
-        MD_Forest forest = recursion(graph, pivot, activeEdges);
+        MD_Tree forest = recursion(graph, pivot, activeEdges);
+
+        /*cout << "After Recursion: " << endl;
+        printForest(&forest);
+        cout << endl;*/
+
         refinement(graph, pivot, forest, activeEdges);
-        promotion(forest);
-        MD_Tree finalResult = assembly(forest, graph, pivot);
+
+        /*cout << "After Refinement: " << endl;
+        printForest(&forest);
+        cout << endl;*/
+
+        vector<MD_Tree> forestVec = promotion(forest);
+
+        /*cout << "After Promotion: " << endl;
+        printForest(forestVec);
+        cout << endl;*/
+
+        MD_Tree finalResult = assembly(forestVec, graph, pivot);
 
         return finalResult;
     }

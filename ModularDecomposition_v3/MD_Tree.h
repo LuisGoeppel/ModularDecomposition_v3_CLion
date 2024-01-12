@@ -40,6 +40,7 @@ struct MD_Tree {
     int rightIndex;
 
     MD_Tree(TreeNode* r);
+    MD_Tree();
 };
 
 bool compareTreeNodePointers(const TreeNode* lhs, const TreeNode* rhs);

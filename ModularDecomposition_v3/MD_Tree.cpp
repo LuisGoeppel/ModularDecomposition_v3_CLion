@@ -12,6 +12,9 @@ markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 MD_Tree::MD_Tree(TreeNode* r) : root(r), leftIndex(-1), rightIndex(-1),
 left(nullptr), right(nullptr) {}
 
+MD_Tree::MD_Tree() : root(nullptr), leftIndex(-1), rightIndex(-1),
+left(nullptr), right(nullptr) {}
+
 /**
 * Operator implementations
 */

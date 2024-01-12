@@ -81,11 +81,6 @@ bool Util::testModularDecompositionTree(const Graph& graph, const MD_Tree& tree)
         for (int rhs = 0; rhs < adjlist.size(); rhs++) {
             if (lhs != rhs) {
 
-                if (lhs == 0 && rhs == 2) {
-                    int a;
-                    cout << "h";
-                }
-
                 bool hasConnectionGraph = false;
                 for (int adj : adjlist[lhs]) {
                     if (adj == rhs) {
