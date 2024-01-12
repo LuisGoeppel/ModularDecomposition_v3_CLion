@@ -569,39 +569,37 @@ vector<int> getTotalAdjacencyList(const vector<int>& vertices, const Graph& grap
 void insertLeftRightPointers(vector<MD_Tree>& forest, const Graph& graph) {
     int n = forest.size();
     vector<int> maxModuleIndices = getMaxModuleIndices(forest, graph.getAdjlist().size());
-    vector<vector<bool>> connections(n, vector<bool>(n, false));
-
-    // Besser: Ein (eindimensionalen) Vektor mit false initialisieren und dort für jedes MaxModule bestimmte Einträge auf 'true' setzen. 
-    // Nach dem Bestimmen der Left/Right Pointer genau diese Einträge danach wieder auf false
+    vector<bool> connections(n, false);
 
     for (int i = 0; i < n; i++) {
         vector<int> vertices = getPreOrderLeafs(forest[i].root);
         vector<int> totalAdjacencies = getTotalAdjacencyList(vertices, graph);
+        int maxConnectionIndex = numeric_limits<int>::min();
+        vector<int> connectionIndices;
+
         for (int j = 0; j < totalAdjacencies.size(); j++) {
             int connectedModule = maxModuleIndices[totalAdjacencies[j]];
             if (connectedModule != -1) {
-                connections[i][connectedModule] = true;
-                connections[connectedModule][i] = true;
+                connections[connectedModule] = true;
+                connectionIndices.push_back(connectedModule);
+                if (connectedModule > maxConnectionIndex) {
+                    maxConnectionIndex = connectedModule;
+                }
             }
         }
-    }
-
-    // Left and Right pointers are always to the left of the element with the given index
-    for (int i = 0; i < n; i++) {
         int leftPointer = 0;
-        int rightPointer = n;
-        while (leftPointer < i && connections[i][leftPointer]) {
+        while (leftPointer < i && connections[leftPointer]) {
             leftPointer++;
         }
-        while (rightPointer > i && !connections[i][rightPointer - 1]) {
-            rightPointer--;
-        }
 
-        // Iteration über 'true' Werte is okay (bezogen auf Linearzeit), Iteration über 'false' Einträge nicht.
-        // Speichere den maximalen 'true' Wert mit ab und verwende diesen für den 'Right' pointer
-
+        // Left and Right pointers are always to the left of the element with the given index
         forest[i].leftIndex = leftPointer;
-        forest[i].rightIndex = rightPointer;
+        forest[i].rightIndex = maxConnectionIndex + 1;
+
+        // Reset the connections vector
+        for (int connection : connectionIndices) {
+            connections[connection] = false;
+        }
     }
 }
 
