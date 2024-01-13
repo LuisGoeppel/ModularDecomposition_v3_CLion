@@ -116,26 +116,6 @@ MD_Tree getRecursiveComputation(const Graph& subgraph)
 }
 
 /**
-* Returns the incident active edges for a given node.
-*
-* @param activeEdges A set containing every activeEdge
-* @param node The node to get the incident active edges from
-* @return The incident active edges for the given node
-*/
-unordered_set<int> getIncidentActiveEdges(const vector<pair<int, int>>& activeEdges, int node) {
-    unordered_set<int> result;
-    for (auto edge : activeEdges) {
-        if (edge.first == node) {
-            result.insert(edge.second);
-        }
-        if (edge.second == node) {
-            result.insert(edge.first);
-        }
-    }
-    return result;
-}
-
-/**
 * Prints a given modular - decomposition forest on the command line
 *
 * @param current The forest to be printed, passed by its first MD_Tree
@@ -685,9 +665,10 @@ void addToMDTree(TreeNode*& currentNode, Label& currentModuleType, TreeNode*& la
 *   after the method has terminated
 * @return The resulting MD_Forest (list of MD_Trees)
 */
-MD_Tree recursion(const Graph& graph, int pivot, vector<pair<int, int>>& activeEdges) {
+MD_Tree recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& activeEdges, vector<bool>& leftNodes) {
     int currentIndex = 0;
     vector<vector<int>> adjlist = graph.getAdjlist();
+    activeEdges.assign(adjlist.size(), unordered_set<int>());
     vector<unordered_set<int>> N;
     unordered_set<int> remainingNodes;
     MD_Tree* currentTree = nullptr;
@@ -700,11 +681,17 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<pair<int, int>>& activeE
                 if (i != pivot) {
                     if (find(adjlist[pivot].begin(), adjlist[pivot].end(), i) != adjlist[pivot].end()) {
                         currentSet.insert(i);
-                        activeEdges.emplace_back(pivot, i);
+                        activeEdges[i].insert(pivot);
+                        activeEdges[pivot].insert(i);
+                        leftNodes.push_back(true);
                     }
                     else {
                         remainingNodes.insert(i);
+                        leftNodes.push_back(false);
                     }
+                }
+                else {
+                    leftNodes.push_back(false);
                 }
             }
         }
@@ -714,7 +701,8 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<pair<int, int>>& activeE
                 for (int adj : adjlist[node]) {
                     if (lastN.find(adj) != lastN.end()) {
                         currentSet.insert(node);
-                        activeEdges.emplace_back(adj, node);
+                        activeEdges[adj].insert(node);
+                        activeEdges[node].insert(adj);
                     }
                 }
             }
@@ -768,21 +756,12 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<pair<int, int>>& activeE
 * @param activeEdges A set of all activeEdges.
 */
 void refinement(const Graph& graph, int previousPivot, MD_Tree& forest,
-    const vector<pair<int, int>>& activeEdges) {
+    const vector<unordered_set<int>>& activeEdges, const vector<bool>& leftNodes) {
 
     for (int i = 0; i < graph.getAdjlist().size(); i++) {
         if (i != previousPivot) {
-            unordered_set<int> incidentActives = getIncidentActiveEdges(activeEdges, i);
-
-            bool nodeIsLeft = false;
-            vector<vector<int>> adjlist = graph.getAdjlist();
-            for (int adj : adjlist[i]) {
-                if (adj == previousPivot) {
-                    nodeIsLeft = true;
-                    break;
-                }
-            }
-            refineBySet(forest, incidentActives, nodeIsLeft);
+            unordered_set<int> incidentActives = activeEdges[i];
+            refineBySet(forest, incidentActives, leftNodes[i]);
         }
     }
 }
@@ -946,15 +925,16 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
     if (graph.isConnected()) {
         int pivot = 0;
-        vector<pair<int, int>> activeEdges;
+        vector<unordered_set<int>> activeEdges;
+        vector<bool> leftNodes;
 
-        MD_Tree forest = recursion(graph, pivot, activeEdges);
+        MD_Tree forest = recursion(graph, pivot, activeEdges, leftNodes);
 
         /*cout << "After Recursion: " << endl;
         printForest(&forest);
         cout << endl;*/
 
-        refinement(graph, pivot, forest, activeEdges);
+        refinement(graph, pivot, forest, activeEdges, leftNodes);
 
         /*cout << "After Refinement: " << endl;
         printForest(&forest);
@@ -996,7 +976,7 @@ int main() {
     MD_Tree mdTree = getModularDecomposition(graph);
     auto end = chrono::high_resolution_clock::now();
 
-    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
 
     Util::sortTree(mdTree);
     if (indexMapping.size() > 0) {
@@ -1010,5 +990,5 @@ int main() {
     else {
         cout << endl << "Unfortunately, this result appears to be incorrect!" << endl;
     }
-    cout << endl << "Time needed: " << duration.count() << "ms" << endl;
+    cout << endl << "Time needed: " << duration.count() << "microseconds" << endl;
 }
