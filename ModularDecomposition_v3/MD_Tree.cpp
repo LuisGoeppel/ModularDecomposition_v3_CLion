@@ -3,10 +3,10 @@
 /**
 * Constructor implementations
 */
-TreeNode::TreeNode(int val) : value(val), label(LEAF), markedLeft(false),
+TreeNode::TreeNode(int val) : value(val), timestamp(-1), label(LEAF), markedLeft(false),
 markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
-TreeNode::TreeNode(Label l) : value(-1), label(l), markedLeft(false),
+TreeNode::TreeNode(Label l) : value(-1), timestamp(-1), label(l), markedLeft(false),
 markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
 MD_Tree::MD_Tree(TreeNode* r) : root(r), leftIndex(-1), rightIndex(-1),
@@ -152,6 +152,22 @@ vector<int> getPreOrderLeafs(const TreeNode* root) {
 }
 
 /**
+* Resets all timestemps of the given tree to -1.
+* 
+* @param root The root of the tree to reset the timestemps of.
+*/
+void resetTimestemps(TreeNode* node)
+{
+    node->timestamp = -1;
+    if (node->child != nullptr) {
+        resetTimestemps(node->child);
+    }
+    if (node->sibling != nullptr) {
+        resetTimestemps(node->sibling);
+    }
+}
+
+/**
 * Returns the number of matching arguments of a vector and an unordered_set.
 *
 * @tparam T The type of elements in the vector and set.
@@ -177,8 +193,8 @@ int getNMatchingArguments(const vector<t>& lhs, const unordered_set<t>& rhs) {
 * @param node The root node of the tree to check
 * @param X The set
 * @param subTrees This set will be filled with the maximal containing subtrees.
-*/
-void getMaxContSubTrees(TreeNode* node, unordered_set<int>& X, unordered_set<TreeNode*>& subTrees)
+
+void ggetMaxContSubTrees(TreeNode* node, unordered_set<int>& X, unordered_set<TreeNode*>& subTrees)
 {
     vector<int> leafs = getPreOrderLeafs(node);
     int nMatching = getNMatchingArguments(leafs, X);
@@ -193,5 +209,51 @@ void getMaxContSubTrees(TreeNode* node, unordered_set<int>& X, unordered_set<Tre
     }
     if (node->sibling != nullptr) {
         getMaxContSubTrees(node->sibling, X, subTrees);
+    }
+}*/
+
+/**
+* Calculates the maximal containing subtrees, based on a set X. This means, that all nodes are returned,
+* whose children can all be found in a set X. This cannot be true for the node's parent.
+*
+* @param node The root node of the tree to check
+* @param X The set
+* @param subTrees This set will be filled with the maximal containing subtrees.
+* @param currentTimestemp A timestemp that will be used for the calculation.
+*/
+void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X, 
+    unordered_set<TreeNode*>& subTrees, int currentTimestemp)
+{
+    if (node->label == LEAF) {
+        if (X.find(node->value) != X.end()) {
+            node->timestamp = currentTimestemp;
+        }
+    } else if (node->child != nullptr) {
+        getMaxContSubTrees(node->child, startNode, X, subTrees, currentTimestemp);
+        unordered_set<TreeNode*> possibleSubTrees;
+        bool containsAllChildren = true;
+        TreeNode* currentChild = node->child;
+        while (currentChild != nullptr) {
+            if (currentChild->timestamp == currentTimestemp) {
+                possibleSubTrees.insert(currentChild);
+            }
+            else {
+                containsAllChildren = false;
+            }
+            currentChild = currentChild->sibling;
+        }
+        if (containsAllChildren) {
+            node->timestamp = currentTimestemp;
+            if (node == startNode) {
+                subTrees.insert(node);
+            }
+        }
+        else {
+            subTrees.insert(possibleSubTrees.begin(), possibleSubTrees.end());
+        }
+    }
+
+    if (node->sibling != nullptr) {
+        getMaxContSubTrees(node->sibling, startNode, X, subTrees, currentTimestemp);
     }
 }

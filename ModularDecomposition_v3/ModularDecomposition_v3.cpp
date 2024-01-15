@@ -323,14 +323,14 @@ void refineByPrimeNode(TreeNode* node, bool isLeftSplit) {
 * @param nodeIsLeft If the node that was used for calculating the active edges can be found
 *   on the left side of the pivot element.
 */
-void refineBySet(MD_Tree& forest, unordered_set<int>& X, bool nodeIsLeft) {
+void refineBySet(MD_Tree& forest, unordered_set<int>& X, int timestemp, bool nodeIsLeft) {
     unordered_set<TreeNode*> maxSubtrees;
     unordered_set<TreeNode*> maxSubtreeParents;
 
     MD_Tree* currentTree = &forest;
     while (currentTree != nullptr) {
         unordered_set<TreeNode*> subtrees;
-        getMaxContSubTrees(currentTree->root, X, subtrees);
+        getMaxContSubTrees(currentTree->root, currentTree->root, X, subtrees, timestemp);
         maxSubtrees.insert(subtrees.begin(), subtrees.end());
 
         currentTree = currentTree->right;
@@ -712,7 +712,7 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& act
 
             vector<int> subgraphIndexMapping;
             Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-            MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
+            MD_Tree* tree = new MD_Tree(getRecursiveComputation(subgraph));
             updateTreeValues(tree->root, subgraphIndexMapping);
 
             if (currentTree == nullptr) {
@@ -730,7 +730,7 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& act
 
     vector<int> subgraphIndexMapping;
     Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-    MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
+    MD_Tree* tree = new MD_Tree(getRecursiveComputation(subgraph));
     updateTreeValues(tree->root, subgraphIndexMapping);
     
     if (currentTree == nullptr) {
@@ -761,7 +761,7 @@ void refinement(const Graph& graph, int previousPivot, MD_Tree& forest,
     for (int i = 0; i < graph.getAdjlist().size(); i++) {
         if (i != previousPivot) {
             unordered_set<int> incidentActives = activeEdges[i];
-            refineBySet(forest, incidentActives, leftNodes[i]);
+            refineBySet(forest, incidentActives, i, leftNodes[i]);
         }
     }
 }
@@ -924,7 +924,7 @@ MD_Tree getModularDecomposition(const Graph& graph) {
     }
 
     if (graph.isConnected()) {
-        int pivot = 0;
+        int pivot = graph.getAdjlist().size() >= 14 ? 14 : 0;
         vector<unordered_set<int>> activeEdges;
         vector<bool> leftNodes;
 
@@ -947,6 +947,7 @@ MD_Tree getModularDecomposition(const Graph& graph) {
         cout << endl;*/
 
         MD_Tree finalResult = assembly(forestVec, graph, pivot);
+        resetTimestemps(finalResult.root);
 
         return finalResult;
     }

@@ -17,6 +17,7 @@ enum Label {
 struct TreeNode {
     Label label;
     int value;
+    int timestamp;
 
     TreeNode* child;
     TreeNode* sibling;
@@ -56,5 +57,6 @@ void setNeighbor(MD_Tree* lhs, MD_Tree* rhs);
 
 void printTree(const TreeNode* node, int depth = 0);
 vector<int> getPreOrderLeafs(const TreeNode* root);
-void getMaxContSubTrees(TreeNode* node, unordered_set<int>& X,
-    unordered_set<TreeNode*>& subTrees);
+void resetTimestemps(TreeNode* root);
+void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X,
+    unordered_set<TreeNode*>& subTrees, int currentTimestemp);

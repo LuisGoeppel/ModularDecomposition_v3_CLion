@@ -1,0 +1,30 @@
+Änderungen im Vergleich zur ersten Version der Modular Decomposition:
+
+- Der Wald wird nun in Schritt 1 als doppelt verketette Liste anstatt als Vector aufgebaut.
+	Dadurch ist das Entfernen und Einfügen neuer MD_Bäume in Schritt 2 effizienter.
+	Während Schritt 3 wird die doppelt verketette Liste wieder in einen Vector umgewandelt.
+
+- In Schritt 4: Assembly gibt es zwei kleinere Änderungen: 
+	- Zum einen wird beim finalen Zusammenfügen des Baumes nicht mehr ein "included"-vector 
+		gespeichert, sondern das linke und rechte Ende der bereits inkludierten Elemente.
+		Anstatt einer for-Schleife, die bestimmte Elemente überspringt, gibt es nun zwei for-
+		Schleifen, jeweils für die linke und rechte Seite der Elemente (in der Mitte befinden sich
+		die bereits inkludierten).
+	- Durch eine zweite Änderung wird zum Bestimmen der Left- und Right- Pointer nun ein eindimensionaler
+		Vector genommen, bei dem nach jeder Iteration die true-Werte resettet werden, anstatt eine zwei-
+		dimensionale Matrix.
+
+- Schritt 2: Refinement muss nun nicht mehr die "incident active edges" und die Elemente des linken Baumes 
+	selbst bestimmen, diese werden nun währen Schritt 1 gespeichert und schließlich weitergegeben.
+
+- getMaxConatainingSubtrees benötigt nun nur noch einen Durchlauf des Baumes, indem es sogennante
+	"Timestemps" verwendet und unter den Knoten abspeichert.
+
+
+Änderungen außerhalb des "normalen" Algorithmus:
+
+- Eine Util Klasse kann nun überprüfen, ob ein ausgegebener MD_Baum korrekt ist.
+- Die Main-Methode ließt nun eine Datei ein, von der ausgehend der Algorithmus arbeitet.
+
+
+Noch vorzunehmende Änderungen:
