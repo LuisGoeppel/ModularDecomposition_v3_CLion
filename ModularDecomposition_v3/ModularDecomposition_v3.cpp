@@ -712,7 +712,7 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& act
 
             vector<int> subgraphIndexMapping;
             Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-            MD_Tree* tree = new MD_Tree(getRecursiveComputation(subgraph));
+            MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
             updateTreeValues(tree->root, subgraphIndexMapping);
 
             if (currentTree == nullptr) {
@@ -730,7 +730,7 @@ MD_Tree recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& act
 
     vector<int> subgraphIndexMapping;
     Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-    MD_Tree* tree = new MD_Tree(getRecursiveComputation(subgraph));
+    MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
     updateTreeValues(tree->root, subgraphIndexMapping);
     
     if (currentTree == nullptr) {
@@ -920,6 +920,7 @@ MD_Tree getModularDecomposition(const Graph& graph) {
     }
     else if (graph.getAdjlist().size() == 1) {
         TreeNode* root = new TreeNode(0);
+        // Create a vector that maps value -> TreeNode*
         return MD_Tree(root);
     }
 
