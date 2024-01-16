@@ -130,11 +130,13 @@
     <ClCompile Include="Graph.cpp" />
     <ClCompile Include="MD_Tree.cpp" />
     <ClCompile Include="ModularDecomposition_v3.cpp" />
+    <ClCompile Include="TreeList.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graph.h" />
     <ClInclude Include="MD_Tree.h" />
+    <ClInclude Include="TreeList.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>

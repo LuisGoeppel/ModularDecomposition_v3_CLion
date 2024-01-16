@@ -15,6 +15,7 @@ left(nullptr), right(nullptr) {}
 MD_Tree::MD_Tree() : root(nullptr), leftIndex(-1), rightIndex(-1),
 left(nullptr), right(nullptr) {}
 
+
 /**
 * Operator implementations
 */
