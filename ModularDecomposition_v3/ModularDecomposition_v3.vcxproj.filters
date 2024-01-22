@@ -48,5 +48,6 @@
   <ItemGroup>
     <Text Include="Graph.txt" />
     <Text Include="Changes.txt" />
+    <Text Include="OldCode.txt" />
   </ItemGroup>
 </Project>

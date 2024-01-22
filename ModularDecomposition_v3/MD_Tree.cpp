@@ -3,11 +3,11 @@
 /**
 * Constructor implementations
 */
-TreeNode::TreeNode(int val) : value(val), timestamp(-1), label(LEAF), markedLeft(false),
-markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
+TreeNode::TreeNode(int val) : value(val), timestamp(-1), nChildNodes(0), childCounter(0),
+label(LEAF), markedLeft(false), markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
-TreeNode::TreeNode(Label l) : value(-1), timestamp(-1), label(l), markedLeft(false),
-markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
+TreeNode::TreeNode(Label l) : value(-1), timestamp(-1), nChildNodes(0), childCounter(0), label(l), 
+markedLeft(false), markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
 MD_Tree::MD_Tree(TreeNode* r) : root(r), leftIndex(-1), rightIndex(-1),
 left(nullptr), right(nullptr) {}
@@ -257,4 +257,65 @@ void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set
     if (node->sibling != nullptr) {
         getMaxContSubTrees(node->sibling, startNode, X, subTrees, currentTimestemp);
     }
+}
+
+void getMaxContSubTreesHelper(TreeNode* node, vector<TreeNode*>& subTrees, int currentTimestamp)
+{
+    TreeNode* currentChild = node->child;
+    vector<TreeNode*> possibleSubTrees;
+    bool allChildrenIncluded = true;
+
+    while (currentChild != nullptr) {
+        if (currentChild->timestamp == currentTimestamp) {
+            possibleSubTrees.push_back(currentChild);
+        }
+        else {
+            allChildrenIncluded = false;
+        }
+        currentChild = currentChild->sibling;
+    }
+
+    if (allChildrenIncluded) {
+        TreeNode* parentNode = node->parent;
+        if (parentNode != nullptr) {
+            if (parentNode->timestamp != currentTimestamp) {
+                parentNode->timestamp = currentTimestamp;
+                getMaxContSubTreesHelper(parentNode, subTrees, currentTimestamp);
+            }
+        }
+        else {
+            subTrees.push_back(node);
+        }
+    }
+    else {
+        subTrees.insert(subTrees.end(), possibleSubTrees.begin(), possibleSubTrees.end());
+        node->timestamp = -1;
+    }
+}
+
+vector<TreeNode*> getMaxContSubTrees(const vector<int>& X, 
+    const vector<TreeNode*>& nodeValueMapping, int currentTimestamp) {
+
+    vector<TreeNode*> output;
+    vector<TreeNode*> parentNodes;
+    for (int value : X) {
+        TreeNode* node = nodeValueMapping[value];
+        TreeNode* parentNode = node->parent;
+        node->timestamp = currentTimestamp;
+
+        if (parentNode != nullptr) {
+            if (parentNode->timestamp != currentTimestamp) {
+                parentNodes.push_back(parentNode);
+                parentNode->timestamp = currentTimestamp;
+            }
+        }
+        else {
+            output.push_back(node);
+        }
+    }
+
+    for (TreeNode* parent : parentNodes) {
+        getMaxContSubTreesHelper(parent, output, currentTimestamp);
+    }
+    return output;
 }

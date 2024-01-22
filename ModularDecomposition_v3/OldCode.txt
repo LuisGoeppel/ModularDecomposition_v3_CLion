@@ -1,0 +1,46 @@
+
+/**
+* Calculates the maximal containing subtrees, based on a set X. This means, that all nodes are returned,
+* whose children can all be found in a set X. This cannot be true for the node's parent.
+*
+* @param node The root node of the tree to check
+* @param X The set
+* @param subTrees This set will be filled with the maximal containing subtrees.
+* @param currentTimestemp A timestemp that will be used for the calculation.
+*/
+void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X, 
+    unordered_set<TreeNode*>& subTrees, int currentTimestemp)
+{
+    if (node->label == LEAF) {
+        if (X.find(node->value) != X.end()) {
+            node->timestamp = currentTimestemp;
+        }
+    } else if (node->child != nullptr) {
+        getMaxContSubTrees(node->child, startNode, X, subTrees, currentTimestemp);
+        unordered_set<TreeNode*> possibleSubTrees;
+        bool containsAllChildren = true;
+        TreeNode* currentChild = node->child;
+        while (currentChild != nullptr) {
+            if (currentChild->timestamp == currentTimestemp) {
+                possibleSubTrees.insert(currentChild);
+            }
+            else {
+                containsAllChildren = false;
+            }
+            currentChild = currentChild->sibling;
+        }
+        if (containsAllChildren) {
+            node->timestamp = currentTimestemp;
+            if (node == startNode) {
+                subTrees.insert(node);
+            }
+        }
+        else {
+            subTrees.insert(possibleSubTrees.begin(), possibleSubTrees.end());
+        }
+    }
+
+    if (node->sibling != nullptr) {
+        getMaxContSubTrees(node->sibling, startNode, X, subTrees, currentTimestemp);
+    }
+}

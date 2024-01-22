@@ -17,6 +17,7 @@ enum Label {
 struct TreeNode {
     Label label;
     int value;
+
     int timestamp;
 
     TreeNode* child;
@@ -28,7 +29,6 @@ struct TreeNode {
 
     TreeNode(int val);
     TreeNode(Label l);
-
 };
 
 struct MD_Tree {
@@ -60,3 +60,7 @@ vector<int> getPreOrderLeafs(const TreeNode* root);
 void resetTimestemps(TreeNode* root);
 void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X,
     unordered_set<TreeNode*>& subTrees, int currentTimestemp);
+
+vector<TreeNode*> getMaxContSubTrees(const vector<int>& X,
+    const vector<TreeNode*>& nodeValueMapping, int currentTimestamp);
+void getMaxContSubTreesHelper(TreeNode* node, vector<TreeNode*>& subTrees, int currentTimestamp);

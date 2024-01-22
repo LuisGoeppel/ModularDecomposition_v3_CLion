@@ -16,6 +16,7 @@
 using namespace std;
 
 MD_Tree getModularDecomposition(const Graph& graph);
+MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValueMapping);
 
 /**
  * Returns the contents of a file as a string.
@@ -270,7 +271,9 @@ void refineByPrimeNode(TreeNode* node, bool isLeftSplit) {
 * @param nodeIsLeft If the node that was used for calculating the active edges can be found
 *   on the left side of the pivot element.
 */
-void refineBySet(TreeList& forest, unordered_set<int>& X, int timestemp, bool nodeIsLeft) {
+void refineBySet(TreeList& forest, vector<TreeNode*>& nodeValueMapping, unordered_set<int>& X,
+    int timestemp, bool nodeIsLeft) {
+
     unordered_set<TreeNode*> maxSubtrees;
     unordered_set<TreeNode*> maxSubtreeParents;
 
@@ -425,6 +428,15 @@ void updateTreeValues(TreeNode* node, const vector<int>& updatedValues) {
     }
     if (node->child != nullptr) {
         updateTreeValues(node->child, updatedValues);
+    }
+}
+
+
+void updateNodeValueMapping(vector<TreeNode*>& newMapping, vector<TreeNode*>& oldMapping, 
+    const vector<int>& indexMapping) {
+
+    for (int i = 0; i < oldMapping.size(); i++) {
+        newMapping[indexMapping[i]] = oldMapping[i];
     }
 }
 
@@ -599,6 +611,18 @@ void addToMDTree(TreeNode*& currentNode, Label& currentModuleType, TreeNode*& la
     }
 }
 
+void computeAndAddMDTree(const Graph& graph, vector<TreeNode*>& nodeValueMapping, 
+    TreeList* output, unordered_set<int> currentN) {
+
+    vector<int> subgraphIndexMapping;
+    Graph subgraph = graph.getSubGraph(currentN, subgraphIndexMapping);
+    vector<TreeNode*> nodeValueMap(subgraph.getAdjlist().size());
+    MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph, nodeValueMap));
+    updateNodeValueMapping(nodeValueMapping, nodeValueMap, subgraphIndexMapping);
+    updateTreeValues(tree->root, subgraphIndexMapping);
+    output->insert(tree);
+}
+
 
 /**
 * Performs the first step of the algorithm, the recursion. In this step, the vertices of
@@ -612,7 +636,9 @@ void addToMDTree(TreeNode*& currentNode, Label& currentModuleType, TreeNode*& la
 *   after the method has terminated
 * @return The resulting MD_Forest (list of MD_Trees)
 */
-TreeList recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& activeEdges, vector<bool>& leftNodes) {
+TreeList recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& activeEdges, 
+    vector<bool>& leftNodes, vector<TreeNode*>& nodeValueMapping) {
+
     int currentIndex = 0;
     vector<vector<int>> adjlist = graph.getAdjlist();
     activeEdges.assign(adjlist.size(), unordered_set<int>());
@@ -655,22 +681,13 @@ TreeList recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& ac
             for (int node : currentSet) {
                 remainingNodes.erase(node);
             }
-
-            vector<int> subgraphIndexMapping;
-            Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-            MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
-            updateTreeValues(tree->root, subgraphIndexMapping);
-            output->insert(tree);
+            computeAndAddMDTree(graph, nodeValueMapping, output, N[currentIndex - 1]);
         }
         N.push_back(currentSet);
         currentIndex++;
     } while (remainingNodes.size() > 0);
 
-    vector<int> subgraphIndexMapping;
-    Graph subgraph = graph.getSubGraph(N[currentIndex - 1], subgraphIndexMapping);
-    MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph));
-    updateTreeValues(tree->root, subgraphIndexMapping);
-    output->insert(tree);
+    computeAndAddMDTree(graph, nodeValueMapping, output, N[currentIndex - 1]);
 
     return *output;
 }
@@ -685,13 +702,13 @@ TreeList recursion(const Graph& graph, int pivot, vector<unordered_set<int>>& ac
 * @param forest The MD_Forest that was calculated in step 1 (recursion).
 * @param activeEdges A set of all activeEdges.
 */
-void refinement(const Graph& graph, int previousPivot, TreeList& forest,
-    const vector<unordered_set<int>>& activeEdges, const vector<bool>& leftNodes) {
+void refinement(const Graph& graph, vector<TreeNode*>& nodeValueMapping, int previousPivot, 
+    TreeList& forest, const vector<unordered_set<int>>& activeEdges, const vector<bool>& leftNodes) {
 
     for (int i = 0; i < graph.getAdjlist().size(); i++) {
         if (i != previousPivot) {
             unordered_set<int> incidentActives = activeEdges[i];
-            refineBySet(forest, incidentActives, i, leftNodes[i]);
+            refineBySet(forest, nodeValueMapping, incidentActives, i, leftNodes[i]);
         }
     }
 }
@@ -724,9 +741,11 @@ vector<MD_Tree> promotion(TreeList& forest) {
 * @param pivot The previously chosen pivot element.
 * @return The final assembled MD-tree.
 */
-MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
+MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, vector<TreeNode*>& nodeValueMapping, int pivot) {
 
-    MD_Tree pivotTree = MD_Tree(new TreeNode(pivot));
+    TreeNode* pivotNode = new TreeNode(pivot);
+    MD_Tree pivotTree = MD_Tree(pivotNode);
+    nodeValueMapping[pivot] = pivotNode;
     int pivotIndex = 1;
     while (pivotIndex < forest.size() && isConnectedToPivot(forest[pivotIndex].root, 
         graph.getAdjlist()[pivot])) {
@@ -735,7 +754,7 @@ MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
     forest.insert(forest.begin() + pivotIndex, pivotTree);
     insertLeftRightPointers(forest, graph);
 
-    TreeNode* lastModule = new TreeNode(pivot);
+    TreeNode* lastModule = pivotNode;
 
     int currentLeft = pivotIndex;
     int currentRight = pivotIndex + 1;
@@ -811,7 +830,7 @@ MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, int pivot) {
 * @param graph The graph
 * @return The recursively computed MD_Tree
 */
-MD_Tree getModularDecompositionDisconnectedGraph(const Graph& graph) {
+MD_Tree getModularDecompositionDisconnectedGraph(const Graph& graph, vector<TreeNode*>& nodeValueMapping) {
     vector<unordered_set<int>> components = graph.getConnectedComponents();
     TreeNode* rootNode = new TreeNode(PARALLEL);
     TreeNode* lastChild = nullptr;
@@ -819,7 +838,9 @@ MD_Tree getModularDecompositionDisconnectedGraph(const Graph& graph) {
     for (int i = 0; i < components.size(); i++) {
         vector<int> subgraphIndexMapping;
         Graph subgraph = graph.getSubGraph(components[i], subgraphIndexMapping);
-        MD_Tree tree = getModularDecomposition(subgraph);
+        vector<TreeNode*> nodeValueMap(subgraph.getAdjlist().size());
+        MD_Tree tree = getModularDecomposition(subgraph, nodeValueMap);
+        updateNodeValueMapping(nodeValueMapping, nodeValueMap, subgraphIndexMapping);
         updateTreeValues(tree.root, subgraphIndexMapping);
         if (i == 0) {
             setChild(rootNode, tree.root);
@@ -843,14 +864,14 @@ MD_Tree getModularDecompositionDisconnectedGraph(const Graph& graph) {
 *
 * @param graph The graph to be modular decomposed.
 */
-MD_Tree getModularDecomposition(const Graph& graph) {
+MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValueMapping) {
 
     if (graph.getAdjlist().size() == 0) {
         cerr << "You cannot get a modular decomposition of a graph with no vertices!" << endl;
     }
     else if (graph.getAdjlist().size() == 1) {
         TreeNode* root = new TreeNode(0);
-        // Create a vector that maps value -> TreeNode*
+        nodeValueMapping[0] = root;
         return MD_Tree(root);
     }
 
@@ -859,13 +880,13 @@ MD_Tree getModularDecomposition(const Graph& graph) {
         vector<unordered_set<int>> activeEdges;
         vector<bool> leftNodes;
 
-        TreeList forest = recursion(graph, pivot, activeEdges, leftNodes);
+        TreeList forest = recursion(graph, pivot, activeEdges, leftNodes, nodeValueMapping);
 
         /*cout << "After Recursion: " << endl;
         printForest(&forest);
         cout << endl;*/
 
-        refinement(graph, pivot, forest, activeEdges, leftNodes);
+        refinement(graph, nodeValueMapping, pivot, forest, activeEdges, leftNodes);
 
         /*cout << "After Refinement: " << endl;
         printForest(&forest);
@@ -877,15 +898,20 @@ MD_Tree getModularDecomposition(const Graph& graph) {
         printForest(forestVec);
         cout << endl;*/
 
-        MD_Tree finalResult = assembly(forestVec, graph, pivot);
+        MD_Tree finalResult = assembly(forestVec, graph, nodeValueMapping, pivot);
         resetTimestemps(finalResult.root);
 
         return finalResult;
     }
     else {
-        MD_Tree finalTree = getModularDecompositionDisconnectedGraph(graph);
+        MD_Tree finalTree = getModularDecompositionDisconnectedGraph(graph, nodeValueMapping);
         return finalTree;
     }
+}
+
+MD_Tree getModularDecomposition(const Graph& graph) {
+    vector<TreeNode*> nodeValueMapping(graph.getAdjlist().size());
+    return getModularDecomposition(graph, nodeValueMapping);
 }
 
 /**
