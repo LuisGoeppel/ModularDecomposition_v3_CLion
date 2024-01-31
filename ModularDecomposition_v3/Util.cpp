@@ -1,11 +1,10 @@
 #include "Util.h"
 
-
 /**
-* Sorts the given tree alphabetically.
-*
-* @param tree The tree to sort.
-*/
+ * Sorts the given tree alphabetically.
+ *
+ * @param tree The tree to sort.
+ */
 void Util::sortTree(MD_Tree& tree) {
     sortTreeHelper(tree.root);
 }
@@ -40,8 +39,8 @@ vector<int> Util::rewriteAdjacencyList(string& adjList)
         indexMapping.push_back(lineLetter);
         updatedAdjlist += lines[i] + "\n";
     }
-    vector<int> inverseIndices = getInverse(indexMapping);
 
+    vector<int> inverseIndices = getInverse(indexMapping);
     for (int i = 0; i < updatedAdjlist.size(); i++) {
         int current = updatedAdjlist[i] - 'a';
         if (current >= 0 && current < inverseIndices.size()) {
@@ -53,6 +52,12 @@ vector<int> Util::rewriteAdjacencyList(string& adjList)
     return indexMapping;
 }
 
+/**
+ * Checks if the provided string of node names is consecutively ordered from 'a' onwards.
+ *
+ * @param input The string of node names.
+ * @return True if consecutively ordered, false otherwise.
+ */
 bool Util::isConsecutivelyOrdered(const string& input)
 {
     stringstream ss(input);
@@ -72,6 +77,13 @@ bool Util::isConsecutivelyOrdered(const string& input)
     return true;
 }
 
+/**
+ * Tests if the provided Modular Decomposition tree is valid for the given graph.
+ *
+ * @param graph The graph.
+ * @param tree The Modular Decomposition tree.
+ * @return True if the tree is valid, false otherwise.
+ */
 bool Util::testModularDecompositionTree(const Graph& graph, const MD_Tree& tree)
 {
     vector<vector<int>> adjlist = graph.getAdjlist();
@@ -127,22 +139,32 @@ bool Util::testModularDecompositionTree(const Graph& graph, const MD_Tree& tree)
     return true;
 }
 
+/**
+ * Checks the child node values of the provided Modular Decomposition tree.
+ *
+ * @param tree The Modular Decomposition tree.
+ */
+void Util::checkChildNodeValues(MD_Tree& tree)
+{
+    checkChildNodeValuesHelper(tree.root);
+}
 
 /**
-* A helper function for the sortTree algorithm. It takes a node, sorts its children
-* alphabetically, and then recurisvely calls itself for the node' children and siblings.
-*
-* @param node The current node, of which the children should get sorted.
-*/
+ * @brief A helper function for the sortTree algorithm. It takes a node, sorts its children
+ * alphabetically, and then recursively calls itself for the node's children and siblings.
+ *
+ * @param node The current node, of which the children should get sorted.
+ */
 void Util::sortTreeHelper(TreeNode* node) {
     vector<TreeNode*> children;
     TreeNode* next = node->child;
+
     while (next != nullptr) {
         children.push_back(next);
         next = next->sibling;
     }
-    if (children.size() > 0) {
 
+    if (children.size() > 0) {
         sort(children.begin(), children.end(), compareTreeNodePointers);
         for (int i = 0; i < children.size(); i++) {
             if (i == 0) {
@@ -163,6 +185,12 @@ void Util::sortTreeHelper(TreeNode* node) {
     }
 }
 
+/**
+ * Gets the inverse of the provided vector.
+ *
+ * @param vec The input vector.
+ * @return The inverse vector.
+ */
 vector<int> Util::getInverse(const vector<int>& vec)
 {
     int maxElement = 0;
@@ -178,6 +206,14 @@ vector<int> Util::getInverse(const vector<int>& vec)
     return inverseVector;
 }
 
+/**
+* Gets the common ancestor child node for the given nodes in the Modular Decomposition tree.
+*
+* @param tree The Modular Decomposition tree.
+* @param lhs The left - hand side node.
+* @param rhs The right - hand side node.
+* @return The common ancestor child node.
+*/
 TreeNode* Util::getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs)
 {
     TreeNode* lhsNode = getCorrspondingTreeNode(tree.root, lhs);
@@ -193,8 +229,16 @@ TreeNode* Util::getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs)
         ancestorChildLhs = currentAncestor;
         currentAncestor = currentAncestor->parent;
     }
+    return nullptr;
 }
 
+/**
+ * Gets the corresponding tree node for the given node in the Modular Decomposition tree.
+ *
+ * @param currentNode The current node to search from.
+ * @param node The target node.
+ * @return The corresponding tree node.
+ */
 TreeNode* Util::getCorrspondingTreeNode(TreeNode* currentNode, int node)
 {
     if (currentNode->value == node) {
@@ -210,6 +254,30 @@ TreeNode* Util::getCorrspondingTreeNode(TreeNode* currentNode, int node)
     return out;
 }
 
+/**
+ * A helper function to check child node values of the Modular Decomposition tree.
+ *
+ * @param node The current node.
+ */
+void Util::checkChildNodeValuesHelper(TreeNode* node)
+{
+    TreeNode* currentChild = node->child;
+    int childCount = 0;
 
+    while (currentChild != nullptr) {
+        childCount++;
+        currentChild = currentChild->sibling;
+    }
 
+    if (childCount != node->nChildNodes) {
+        cout << "Error at child count: Expected " << node->nChildNodes
+            << " but found " << childCount << " nodes!";
+    }
 
+    if (node->sibling != nullptr) {
+        checkChildNodeValuesHelper(node->sibling);
+    }
+    if (node->child != nullptr) {
+        checkChildNodeValuesHelper(node->child);
+    }
+}

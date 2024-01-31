@@ -19,6 +19,9 @@ struct TreeNode {
     int value;
 
     int timestamp;
+    int nChildNodes;
+    int nMarkedChildNodes;
+    bool includeNode;
 
     TreeNode* child;
     TreeNode* sibling;
@@ -52,15 +55,14 @@ bool operator==(const TreeNode& lhs, const TreeNode& rhs);
 
 void setChild(TreeNode* lhs, TreeNode* rhs);
 void setSibling(TreeNode* lhs, TreeNode* rhs);
-
 void setNeighbor(MD_Tree* lhs, MD_Tree* rhs);
 
 void printTree(const TreeNode* node, int depth = 0);
 vector<int> getPreOrderLeafs(const TreeNode* root);
 void resetTimestemps(TreeNode* root);
-void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X,
-    unordered_set<TreeNode*>& subTrees, int currentTimestemp);
 
-vector<TreeNode*> getMaxContSubTrees(const vector<int>& X,
-    const vector<TreeNode*>& nodeValueMapping, int currentTimestamp);
-void getMaxContSubTreesHelper(TreeNode* node, vector<TreeNode*>& subTrees, int currentTimestamp);
+unordered_set<TreeNode*> getMaxContSubTrees(const vector<TreeNode*>& treeNodes,
+    int currentTimestamp);
+void updateNodeInclusion(TreeNode* node);
+void insertMaxContSubTrees(TreeNode* node, unordered_set<TreeNode*>& result,
+    int currentTimestamp);

@@ -44,3 +44,352 @@ void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set
         getMaxContSubTrees(node->sibling, startNode, X, subTrees, currentTimestemp);
     }
 }
+
+void getMaxContSubTreesHelper(TreeNode* node, vector<TreeNode*>& subTrees, int currentTimestamp)
+{
+    TreeNode* currentChild = node->child;
+    vector<TreeNode*> possibleSubTrees;
+    bool allChildrenIncluded = true;
+
+    while (currentChild != nullptr) {
+        if (currentChild->timestamp == currentTimestamp) {
+            possibleSubTrees.push_back(currentChild);
+        }
+        else {
+            allChildrenIncluded = false;
+        }
+        currentChild = currentChild->sibling;
+    }
+
+    if (allChildrenIncluded) {
+        TreeNode* parentNode = node->parent;
+        if (parentNode != nullptr) {
+            if (parentNode->timestamp != currentTimestamp) {
+                parentNode->timestamp = currentTimestamp;
+                getMaxContSubTreesHelper(parentNode, subTrees, currentTimestamp);
+            }
+        }
+        else {
+            subTrees.push_back(node);
+        }
+    }
+    else {
+        subTrees.insert(subTrees.end(), possibleSubTrees.begin(), possibleSubTrees.end());
+        node->timestamp = -1;
+    }
+}
+
+vector<TreeNode*> getMaxContSubTrees(const vector<int>& X, 
+    const vector<TreeNode*>& nodeValueMapping, int currentTimestamp) {
+
+    vector<TreeNode*> output;
+    vector<TreeNode*> parentNodes;
+    for (int value : X) {
+        TreeNode* node = nodeValueMapping[value];
+        TreeNode* parentNode = node->parent;
+        node->timestamp = currentTimestamp;
+
+        if (parentNode != nullptr) {
+            if (parentNode->timestamp != currentTimestamp) {
+                parentNodes.push_back(parentNode);
+                parentNode->timestamp = currentTimestamp;
+            }
+        }
+        else {
+            output.push_back(node);
+        }
+    }
+
+    for (TreeNode* parent : parentNodes) {
+        getMaxContSubTreesHelper(parent, output, currentTimestamp);
+    }
+    return output;
+}
+
+
+
+vector<Graph> Graph::getSubGraphs(const vector<int>& distances, vector<vector<int>>& nodeMapping, int nSubgraphs) const
+{
+    vector<vector<vector<int>>> adjacencyLists(nSubgraphs);
+    nodeMapping.assign(nSubgraphs, vector<int>());
+
+    for (int i = 0; i < distances.size(); i++) {
+        vector<int> neighbors;
+        for (int neighbor : adjlist[i]) {
+            if (distances[i] == distances[neighbor]) {
+                neighbors.push_back(neighbor);
+            }
+        }
+        adjacencyLists[distances[i] - 1].push_back(neighbors);
+    }
+}
+
+a: b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q
+b: a
+c: a, i, o
+d: a, e, i, o
+e: a, d, i, o
+f: a, g, h, i
+g: a, f, h, i
+h: a, f, g, i
+i: a, c, d, e, f, g, h
+j: a
+k: a, l
+l: a, k
+m: a, n, p, q
+n: a, m, q
+o: a, c, d, e
+p: a, m, q
+q: a, m, n, p, r
+r: q
+
+
+/**
+* Normally, the modular decomposition for the subgraphs would be performed recursively.
+* However, as long as the algorithm does not work completely, this helper function returns
+* the hard-coded "recursively" computed MD_Trees for a specific example. This allows the
+* algorithm to be tested, even though it is not completely finished.
+*
+* @param subgraph The subgraph of which the MD_Tree should be recursively computed
+* @return the hard-coded MD_Tree for specific subgraphs
+*/
+MD_Tree getRecursiveComputation(const Graph& subgraph, vector<TreeNode*>& nodeValueMapping)
+{
+    if (subgraph.getAdjlist().size() == 4) {
+
+        TreeNode* nodeA = new TreeNode(0);
+        TreeNode* nodeC = new TreeNode(1);
+        TreeNode* nodeD = new TreeNode(2);
+        TreeNode* nodeE = new TreeNode(3);
+
+        nodeValueMapping[0] = &(*nodeA);
+        nodeValueMapping[1] = &(*nodeC);
+        nodeValueMapping[2] = &(*nodeD);
+        nodeValueMapping[3] = &(*nodeE);
+
+        TreeNode* node1 = new TreeNode(SERIES);
+        TreeNode* node0 = new TreeNode(PARALLEL);
+        TreeNode* nodeRoot = new TreeNode(SERIES);
+
+        nodeRoot->nChildNodes = 2;
+        node0->nChildNodes = 2;
+        node1->nChildNodes = 2;
+
+        setChild(nodeRoot, nodeA);
+        setChild(node0, nodeC);
+        setChild(node1, nodeD);
+
+        setSibling(nodeC, node1);
+        setSibling(nodeA, node0);
+        setSibling(nodeD, nodeE);
+
+        return MD_Tree(nodeRoot);
+    }
+
+    if (subgraph.getAdjlist().size() == 12) {
+        TreeNode* nodeB = new TreeNode(0);
+        TreeNode* nodeF = new TreeNode(1);
+        TreeNode* nodeG = new TreeNode(2);
+        TreeNode* nodeH = new TreeNode(3);
+        TreeNode* nodeI = new TreeNode(4);
+        TreeNode* nodeJ = new TreeNode(5);
+        TreeNode* nodeK = new TreeNode(6);
+        TreeNode* nodeL = new TreeNode(7);
+        TreeNode* nodeM = new TreeNode(8);
+        TreeNode* nodeN = new TreeNode(9);
+        TreeNode* nodeP = new TreeNode(10);
+        TreeNode* nodeQ = new TreeNode(11);
+
+        nodeValueMapping[0] = &(*nodeB);
+        nodeValueMapping[1] = &(*nodeF);
+        nodeValueMapping[2] = &(*nodeG);
+        nodeValueMapping[3] = &(*nodeH);
+        nodeValueMapping[4] = &(*nodeI);
+        nodeValueMapping[5] = &(*nodeJ);
+        nodeValueMapping[6] = &(*nodeK);
+        nodeValueMapping[7] = &(*nodeL);
+        nodeValueMapping[8] = &(*nodeM);
+        nodeValueMapping[9] = &(*nodeN);
+        nodeValueMapping[10] = &(*nodeP);
+        nodeValueMapping[11] = &(*nodeQ);
+
+        TreeNode* nodeRoot = new TreeNode(PARALLEL);
+        TreeNode* node1Left = new TreeNode(SERIES);
+        TreeNode* node1Mid = new TreeNode(SERIES);
+        TreeNode* node1Right = new TreeNode(SERIES);
+        TreeNode* node0 = new TreeNode(PARALLEL);
+
+        nodeRoot->nChildNodes = 5;
+        node1Left->nChildNodes = 4;
+        node1Mid->nChildNodes = 2;        
+        node1Right->nChildNodes = 3;
+        node0->nChildNodes = 2;
+
+        setChild(nodeRoot, node1Left);
+        setChild(node1Mid, nodeK);
+        setChild(node1Right, nodeQ);
+        setChild(node0, nodeN);
+
+        setChild(node1Left, nodeI);
+        setSibling(nodeI, nodeG);
+        setSibling(nodeG, nodeH);
+        setSibling(nodeH, nodeF);
+
+        setSibling(nodeK, nodeL);
+        setSibling(nodeQ, nodeM);
+        setSibling(nodeN, nodeP);
+        setSibling(node1Left, nodeB);
+        setSibling(nodeB, node1Mid);
+        setSibling(node1Mid, nodeJ);
+        setSibling(nodeJ, node1Right);
+        setSibling(nodeM, node0);
+
+        return MD_Tree(nodeRoot);
+    }
+
+    TreeNode* root = new TreeNode(0);
+    return MD_Tree(root);
+}
+
+
+
+void computeAndAddMDTree(const Graph& graph, vector<TreeNode*>& nodeValueMapping, 
+    TreeList* output, vector<int> currentN) {
+
+    vector<int> subgraphIndexMapping;
+    Graph subgraph = graph.getSubGraph(currentN, subgraphIndexMapping);
+    vector<TreeNode*> nodeValueMap(subgraph.getAdjlist().size());
+    MD_Tree* tree = new MD_Tree(getModularDecomposition(subgraph, nodeValueMap));
+    updateNodeValueMapping(nodeValueMapping, nodeValueMap, subgraphIndexMapping);
+    updateTreeValues(tree->root, subgraphIndexMapping);
+    output->insert(tree);
+}
+
+
+TreeList recursion2(const Graph& graph, int pivot, vector<vector<int>>& activeEdges, 
+    vector<bool>& leftNodes, vector<TreeNode*>& nodeValueMapping) {
+
+    int currentIndex = 0;
+    vector<vector<int>> adjlist = graph.getAdjlist();
+    activeEdges.assign(adjlist.size(), vector<int>());
+    vector<vector<int>> N;
+    unordered_set<int> remainingNodes;
+    TreeList* output = new TreeList();
+
+    do {
+        unordered_set<int> currentSet;
+        if (currentIndex == 0) {
+            for (int i = 0; i < adjlist.size(); i++) {
+                if (i != pivot) {
+                    if (find(adjlist[pivot].begin(), adjlist[pivot].end(), i) != adjlist[pivot].end()) {
+                        currentSet.insert(i);
+                        leftNodes.push_back(true);
+                    }
+                    else {
+                        remainingNodes.insert(i);
+                        leftNodes.push_back(false);
+                    }
+                }
+                else {
+                    leftNodes.push_back(false);
+                }
+            }
+        }
+        else {
+            for (int node : remainingNodes) {
+                unordered_set<int> lastN = N[currentIndex - 1];
+                for (int adj : adjlist[node]) {
+                    if (lastN.find(adj) != lastN.end()) {
+                        currentSet.insert(node);
+                        activeEdges[adj].push_back(node);
+                        activeEdges[node].push_back(adj);
+                    }
+                }
+            }
+            for (int node : currentSet) {
+                remainingNodes.erase(node);
+            }
+            computeAndAddMDTree(graph, nodeValueMapping, output, N[currentIndex - 1]);
+        }
+        N.push_back(currentSet);
+        currentIndex++;
+    } while (remainingNodes.size() > 0);
+
+    computeAndAddMDTree(graph, nodeValueMapping, output, N[currentIndex - 1]);
+
+    return *output;
+}
+
+
+/**
+* Calculates the maximal containing subtrees, based on a set X. This means, that all nodes are returned,
+* whose children can all be found in a set X. This cannot be true for the node's parent.
+*
+* @param node The root node of the tree to check
+* @param X The set
+* @param subTrees This set will be filled with the maximal containing subtrees.
+
+void ggetMaxContSubTrees(TreeNode* node, unordered_set<int>& X, unordered_set<TreeNode*>& subTrees)
+{
+    vector<int> leafs = getPreOrderLeafs(node);
+    int nMatching = getNMatchingArguments(leafs, X);
+    if (nMatching == leafs.size()) {
+        subTrees.insert(node);
+        for (int leaf : leafs) {
+            X.erase(leaf);
+        }
+    }
+    else if (nMatching > 0 && node->child != nullptr) {
+        getMaxContSubTrees(node->child, X, subTrees);
+    }
+    if (node->sibling != nullptr) {
+        getMaxContSubTrees(node->sibling, X, subTrees);
+    }
+}*/
+
+
+/**
+* Calculates the maximal containing subtrees, based on a set X. This means, that all nodes are returned,
+* whose children can all be found in a set X. This cannot be true for the node's parent.
+*
+* @param node The root node of the tree to check
+* @param X The set
+* @param subTrees This set will be filled with the maximal containing subtrees.
+* @param currentTimestemp A timestemp that will be used for the calculation.
+*/
+void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X, 
+    unordered_set<TreeNode*>& subTrees, int currentTimestemp)
+{
+    if (node->label == LEAF) {
+        if (X.find(node->value) != X.end()) {
+            node->timestamp = currentTimestemp;
+        }
+    } else if (node->child != nullptr) {
+        getMaxContSubTrees(node->child, startNode, X, subTrees, currentTimestemp);
+        unordered_set<TreeNode*> possibleSubTrees;
+        bool containsAllChildren = true;
+        TreeNode* currentChild = node->child;
+        while (currentChild != nullptr) {
+            if (currentChild->timestamp == currentTimestemp) {
+                possibleSubTrees.insert(currentChild);
+            }
+            else {
+                containsAllChildren = false;
+            }
+            currentChild = currentChild->sibling;
+        }
+        if (containsAllChildren) {
+            node->timestamp = currentTimestemp;
+            if (node == startNode) {
+                subTrees.insert(node);
+            }
+        }
+        else {
+            subTrees.insert(possibleSubTrees.begin(), possibleSubTrees.end());
+        }
+    }
+
+    if (node->sibling != nullptr) {
+        getMaxContSubTrees(node->sibling, startNode, X, subTrees, currentTimestemp);
+    }
+}

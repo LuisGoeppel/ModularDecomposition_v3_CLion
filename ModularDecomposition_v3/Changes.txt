@@ -24,6 +24,14 @@
 
 - MD_Tree List erstellt für Listenlogik --> diese ist für das Löschen der Bäume verantwortlich
 
+- getMaxContSubTrees: Darf nur proportional zur Größe von X sein, nicht zur Größe des Baumes:
+	Jeder Wert muss wissen, wo er im Baum zu finden ist
+
+- Überlegen, ob die active edges anstatt in einem unordered_set auch direkt im Knoten gespeichert werden können Information
+	schon vorher vorhanden war.
+	
+- (z.B. getSubgraph): Anstatt unordered_set zwei vektoren, mit den element zum drüberiterieren, 
+	und bool-Werten ob diese inkludiert werden sollen --> Informationen in einer neuen Klasse kapseln
 
 Änderungen außerhalb des "normalen" Algorithmus:
 
@@ -33,10 +41,5 @@
 
 Noch vorzunehmende Änderungen:
 
-- Überlegen, ob die active edges anstatt in einem unordered_set auch direkt im Knoten gespeichert werden können
-- getMaxContSubTrees: Darf nur proportional zur Größe von X sein, nicht zur Größe des Baumes:
-	Jeder Wert muss wissen, wo er im Baum zu finden ist
-- Versuchen, ohne Verwendung von unordered_set auszukommen: Entweder in einem Vektor speichern oder schauen, ob die Information
-	schon vorher vorhanden war.
-- (z.B. getSubgraph): Anstatt unordered_set zwei vektoren, mit den element zum drüberiterieren, 
-	und bool-Werten ob diese inkludiert werden sollen --> Informationen in einer neuen Klasse kapseln
+
+- Versuchen, ohne Verwendung von unordered_set auszukommen: Entweder in einem Vektor speichern oder schauen, ob die

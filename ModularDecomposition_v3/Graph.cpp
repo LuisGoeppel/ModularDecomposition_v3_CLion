@@ -58,13 +58,9 @@ const vector<vector<int>>& Graph::getAdjlist() const
 * @param nodeMapping Mapping from old indices to new indices (updated in the method)
 * @return A subgraph that only contains the vertices given in X.
 */
-Graph Graph::getSubGraph(const unordered_set<int>& X, vector<int>& nodeMapping) const
+Graph Graph::getSubGraph(const vector<int>& X, vector<int>& nodeMapping) const
 {
     vector<vector<int>> newAdjList;
-
-    // Create a mapping from original indices to subgraph indices
-    int subgraphIndex = 0;
-
     for (int i : X) {
         nodeMapping.push_back(i);
     }
@@ -82,6 +78,48 @@ Graph Graph::getSubGraph(const unordered_set<int>& X, vector<int>& nodeMapping) 
 
     return Graph(newAdjList);
 }
+
+/**
+* Returns a list of subgraphs, where the vertices of G are distributed based on a vector with their
+* distances to a pivot element.
+*
+* @param distances The elements of the graph will be distributed according to their values in this vector.
+* @param nodeMapping Mapping from old indices to new indices (updated in the method).
+* @param nSubgraphs The amount of subgraphs that have to be computed.
+* @return A list of subgraphs based on the distances vector.
+*/
+vector<Graph> Graph::getSubGraphs(const vector<int>& distances, vector<vector<int>>& nodeMapping, int nSubgraphs) const
+{
+    vector<vector<vector<int>>> adjacencyLists(nSubgraphs);
+    nodeMapping.assign(nSubgraphs, vector<int>());
+    vector<int> inverseNodeMapping(distances.size());
+
+    for (int i = 0; i < distances.size(); i++) {
+        if (distances[i] > 0) {
+            nodeMapping[distances[i] - 1].push_back(i);
+            inverseNodeMapping[i] = nodeMapping[distances[i] - 1].size() - 1;
+        }
+    }
+
+    for (int i = 0; i < distances.size(); i++) {
+        if (distances[i] > 0) {
+            vector<int> neighbors;
+            for (int neighbor : adjlist[i]) {
+                if (distances[i] == distances[neighbor]) {
+                    neighbors.push_back(inverseNodeMapping[neighbor]);
+                }
+            }
+            adjacencyLists[distances[i] - 1].push_back(neighbors);
+        }
+    }
+
+    vector<Graph> output;
+    for (vector<vector<int>> adjList : adjacencyLists) {
+        output.push_back(Graph(adjList));
+    }
+    return output;
+}
+
 
 /**
 * Uses BFS to check if the graph is connected
@@ -111,13 +149,13 @@ bool Graph::isConnected() const {
 /**
 * Uses DFS to retrieve all components of the graph.
 */
-vector<unordered_set<int>> Graph::getConnectedComponents() const {
-    vector<unordered_set<int>> components;
+vector<vector<int>> Graph::getConnectedComponents() const {
+    vector<vector<int>> components;
     vector<bool> visited(adjlist.size(), false);
 
     for (int i = 0; i < adjlist.size(); ++i) {
         if (!visited[i]) {
-            unordered_set<int> componentNodes;
+            vector<int> componentNodes;
             dfs(i, visited, componentNodes);
             components.push_back(componentNodes);
         }
@@ -133,9 +171,9 @@ vector<unordered_set<int>> Graph::getConnectedComponents() const {
 * @param visited Contains information about which nodes have already been visited.
 * @param componentNodes This set is used to store the results.
 */
-void Graph::dfs(int node, vector<bool>& visited, unordered_set<int>& componentNodes) const {
+void Graph::dfs(int node, vector<bool>& visited, vector<int>& componentNodes) const {
     visited[node] = true;
-    componentNodes.insert(node);
+    componentNodes.push_back(node);
 
     for (int neighbor : adjlist[node]) {
         if (!visited[neighbor]) {

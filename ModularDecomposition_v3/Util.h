@@ -9,8 +9,8 @@
 #include <queue>
 #include <vector>
 
-#include "MD_Tree.h";
-#include "Graph.h";
+#include "MD_Tree.h"
+#include "Graph.h"
 
 using namespace std;
 
@@ -20,11 +20,13 @@ public:
     static vector<int> rewriteAdjacencyList(string& adjList);
     static bool isConsecutivelyOrdered(const string& input);
     static bool testModularDecompositionTree(const Graph& graph, const MD_Tree& tree);
+    static void checkChildNodeValues(MD_Tree& tree);
 
 private:
     static void sortTreeHelper(TreeNode* node);
     static vector<int> getInverse(const vector<int>& vec);
     static TreeNode* getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs);
     static TreeNode* getCorrspondingTreeNode(TreeNode* currentNode, int node);
+    static void checkChildNodeValuesHelper(TreeNode* node);
 };
 

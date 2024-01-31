@@ -1,9 +1,14 @@
 #include "TreeList.h"
 
-TreeList::~TreeList()
-{
-}
+TreeList::~TreeList(){}
 
+/**
+* Replaces an element in the tree list with two new elements.
+* 
+* @param toReplace The element to replace.
+* @param leftNewElement The first new element.
+* @param rightNewElement The second new element.
+*/
 void TreeList::replaceElement(MD_Tree* toReplace, MD_Tree* leftNewElement, MD_Tree* rightNewElement)
 {
 	setNeighbor(toReplace->left, leftNewElement);
@@ -42,6 +47,11 @@ MD_Tree* TreeList::getCorrespondingTree(const TreeNode* node) const {
     return nullptr;
 }
 
+/**
+* Inserts an MD_Tree at the end of the list of MD_Trees.
+*
+* @param tree The element to insert.
+*/
 void TreeList::insert(MD_Tree* tree)
 {
 	if (firstElement == nullptr) {
@@ -54,11 +64,17 @@ void TreeList::insert(MD_Tree* tree)
 	}
 }
 
+/**
+* Returns the start of the TreeList.
+*/
 MD_Tree* TreeList::getStart()
 {
 	return firstElement;
 }
 
+/**
+* Prints the current TreeList to the command line.
+*/
 void TreeList::print()
 {
     int treeCount = 1;

@@ -15,11 +15,12 @@ public:
     Graph(vector<vector<int>>& adjlist);
     Graph(const string& graphString);
     const vector<vector<int>>& getAdjlist() const;
-    Graph getSubGraph(const unordered_set<int>& X, vector<int>& nodeMapping) const;
-
+    Graph getSubGraph(const vector<int>& X, vector<int>& nodeMapping) const;
+    vector<Graph> getSubGraphs(const vector<int>& distances, 
+        vector<vector<int>>& nodeMapping, int nSubgraphs) const;
     bool isConnected() const;
-    vector<unordered_set<int>> getConnectedComponents() const;
+    vector<vector<int>> getConnectedComponents() const;
 
 private:
-    void dfs(int node, vector<bool>& visited, unordered_set<int>& componentNodes) const;
+    void dfs(int node, vector<bool>& visited, vector<int>& componentNodes) const;
 };

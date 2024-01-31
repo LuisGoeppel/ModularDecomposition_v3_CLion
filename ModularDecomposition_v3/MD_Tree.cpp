@@ -3,10 +3,10 @@
 /**
 * Constructor implementations
 */
-TreeNode::TreeNode(int val) : value(val), timestamp(-1), nChildNodes(0), childCounter(0),
+TreeNode::TreeNode(int val) : value(val), timestamp(-1), nChildNodes(0), nMarkedChildNodes(0), includeNode(false),
 label(LEAF), markedLeft(false), markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
-TreeNode::TreeNode(Label l) : value(-1), timestamp(-1), nChildNodes(0), childCounter(0), label(l), 
+TreeNode::TreeNode(Label l) : value(-1), timestamp(-1), nChildNodes(0), nMarkedChildNodes(0), label(l), includeNode(false),
 markedLeft(false), markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
 MD_Tree::MD_Tree(TreeNode* r) : root(r), leftIndex(-1), rightIndex(-1),
@@ -64,6 +64,12 @@ void setSibling(TreeNode* lhs, TreeNode* rhs)
     rhs->parent = lhs->parent;
 }
 
+/**
+* Sets the neighbor of a given MD_Tree.
+*
+* @param lhs The "left" neighbor.
+* @param rhs The "right" neighbor.
+*/
 void setNeighbor(MD_Tree* lhs, MD_Tree* rhs)
 {
     if (lhs != nullptr) {
@@ -188,134 +194,62 @@ int getNMatchingArguments(const vector<t>& lhs, const unordered_set<t>& rhs) {
 }
 
 /**
-* Calculates the maximal containing subtrees, based on a set X. This means, that all nodes are returned,
+* Calculates the maximal containing subtrees, based on a set X of leaf nodes. This means, that all nodes are returned,
 * whose children can all be found in a set X. This cannot be true for the node's parent.
 *
-* @param node The root node of the tree to check
-* @param X The set
-* @param subTrees This set will be filled with the maximal containing subtrees.
+* @param treeNodes The set X of leaf nodes.
+* @param currentTimestemp A timestemp that will be used for the calculation.
+* @return The searched set of treeNodes
+*/
+unordered_set<TreeNode*> getMaxContSubTrees(const vector<TreeNode*>& treeNodes, int currentTimestamp) {
 
-void ggetMaxContSubTrees(TreeNode* node, unordered_set<int>& X, unordered_set<TreeNode*>& subTrees)
-{
-    vector<int> leafs = getPreOrderLeafs(node);
-    int nMatching = getNMatchingArguments(leafs, X);
-    if (nMatching == leafs.size()) {
-        subTrees.insert(node);
-        for (int leaf : leafs) {
-            X.erase(leaf);
-        }
+    unordered_set<TreeNode*> result;
+    for (int i = 0; i < treeNodes.size(); i++) {
+        TreeNode* currentNode = treeNodes[i];
+        updateNodeInclusion(currentNode);
     }
-    else if (nMatching > 0 && node->child != nullptr) {
-        getMaxContSubTrees(node->child, X, subTrees);
+    for (int i = 0; i < treeNodes.size(); i++) {
+        TreeNode* currentNode = treeNodes[i];
+        insertMaxContSubTrees(currentNode, result, currentTimestamp);
     }
-    if (node->sibling != nullptr) {
-        getMaxContSubTrees(node->sibling, X, subTrees);
-    }
-}*/
+
+    return result;
+}
 
 /**
-* Calculates the maximal containing subtrees, based on a set X. This means, that all nodes are returned,
-* whose children can all be found in a set X. This cannot be true for the node's parent.
-*
-* @param node The root node of the tree to check
-* @param X The set
-* @param subTrees This set will be filled with the maximal containing subtrees.
-* @param currentTimestemp A timestemp that will be used for the calculation.
+* Updates a tree nodes inclusion information, based on the amount of its included children.
+* 
+* @param node The tree node to update.
 */
-void getMaxContSubTrees(TreeNode* node, TreeNode* startNode, const unordered_set<int>& X, 
-    unordered_set<TreeNode*>& subTrees, int currentTimestemp)
+void updateNodeInclusion(TreeNode* node)
 {
-    if (node->label == LEAF) {
-        if (X.find(node->value) != X.end()) {
-            node->timestamp = currentTimestemp;
-        }
-    } else if (node->child != nullptr) {
-        getMaxContSubTrees(node->child, startNode, X, subTrees, currentTimestemp);
-        unordered_set<TreeNode*> possibleSubTrees;
-        bool containsAllChildren = true;
-        TreeNode* currentChild = node->child;
-        while (currentChild != nullptr) {
-            if (currentChild->timestamp == currentTimestemp) {
-                possibleSubTrees.insert(currentChild);
-            }
-            else {
-                containsAllChildren = false;
-            }
-            currentChild = currentChild->sibling;
-        }
-        if (containsAllChildren) {
-            node->timestamp = currentTimestemp;
-            if (node == startNode) {
-                subTrees.insert(node);
-            }
-        }
-        else {
-            subTrees.insert(possibleSubTrees.begin(), possibleSubTrees.end());
-        }
-    }
-
-    if (node->sibling != nullptr) {
-        getMaxContSubTrees(node->sibling, startNode, X, subTrees, currentTimestemp);
+    if (node->nChildNodes == node->nMarkedChildNodes) {
+        node->includeNode = true;
+        if (node->parent != nullptr) {
+            node->parent->nMarkedChildNodes++;
+            updateNodeInclusion(node->parent);
+        }       
     }
 }
 
-void getMaxContSubTreesHelper(TreeNode* node, vector<TreeNode*>& subTrees, int currentTimestamp)
+/**
+* Inserts the correct node into a result - set, based on the requirements of the getMaxContSubTrees method.
+* Starts at a leaf node and moves "upwards" in a tree.
+*/
+void insertMaxContSubTrees(TreeNode* node, unordered_set<TreeNode*>& result, int currentTimestamp)
 {
-    TreeNode* currentChild = node->child;
-    vector<TreeNode*> possibleSubTrees;
-    bool allChildrenIncluded = true;
-
-    while (currentChild != nullptr) {
-        if (currentChild->timestamp == currentTimestamp) {
-            possibleSubTrees.push_back(currentChild);
+    if (node->includeNode) {
+        if (node->parent == nullptr) {
+            result.insert(node);
+        } else if (!node->parent->includeNode && node->parent->timestamp != currentTimestamp) {
+            result.insert(node);
         }
-        else {
-            allChildrenIncluded = false;
-        }
-        currentChild = currentChild->sibling;
-    }
-
-    if (allChildrenIncluded) {
-        TreeNode* parentNode = node->parent;
-        if (parentNode != nullptr) {
-            if (parentNode->timestamp != currentTimestamp) {
-                parentNode->timestamp = currentTimestamp;
-                getMaxContSubTreesHelper(parentNode, subTrees, currentTimestamp);
-            }
-        }
-        else {
-            subTrees.push_back(node);
-        }
-    }
-    else {
-        subTrees.insert(subTrees.end(), possibleSubTrees.begin(), possibleSubTrees.end());
-        node->timestamp = -1;
-    }
-}
-
-vector<TreeNode*> getMaxContSubTrees(const vector<int>& X, 
-    const vector<TreeNode*>& nodeValueMapping, int currentTimestamp) {
-
-    vector<TreeNode*> output;
-    vector<TreeNode*> parentNodes;
-    for (int value : X) {
-        TreeNode* node = nodeValueMapping[value];
-        TreeNode* parentNode = node->parent;
         node->timestamp = currentTimestamp;
-
-        if (parentNode != nullptr) {
-            if (parentNode->timestamp != currentTimestamp) {
-                parentNodes.push_back(parentNode);
-                parentNode->timestamp = currentTimestamp;
-            }
-        }
-        else {
-            output.push_back(node);
+        node->includeNode = false; 
+        if (node->parent != nullptr && node->parent->nMarkedChildNodes > 0) {
+            insertMaxContSubTrees(node->parent, result, currentTimestamp);
         }
     }
-
-    for (TreeNode* parent : parentNodes) {
-        getMaxContSubTreesHelper(parent, output, currentTimestamp);
-    }
-    return output;
+    
+    node->nMarkedChildNodes = 0;
 }
