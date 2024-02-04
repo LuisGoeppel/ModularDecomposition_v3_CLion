@@ -59,7 +59,7 @@ void setNeighbor(MD_Tree* lhs, MD_Tree* rhs);
 
 void printTree(const TreeNode* node, int depth = 0);
 vector<int> getPreOrderLeafs(const TreeNode* root);
-void resetTimestemps(TreeNode* root);
+void resetTimestamps(TreeNode* root);
 
 unordered_set<TreeNode*> getMaxContSubTrees(const vector<TreeNode*>& treeNodes,
     int currentTimestamp);

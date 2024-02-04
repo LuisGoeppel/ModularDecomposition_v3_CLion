@@ -837,7 +837,7 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
         cout << endl;
 
         MD_Tree finalResult = assembly(forestVec, graph, nodeValueMapping, pivot);
-        resetTimestemps(finalResult.root);
+        resetTimestamps(finalResult.root);
 
         return finalResult;
     }

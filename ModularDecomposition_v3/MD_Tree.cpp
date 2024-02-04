@@ -163,14 +163,14 @@ vector<int> getPreOrderLeafs(const TreeNode* root) {
 * 
 * @param root The root of the tree to reset the timestemps of.
 */
-void resetTimestemps(TreeNode* node)
+void resetTimestamps(TreeNode* node)
 {
     node->timestamp = -1;
     if (node->child != nullptr) {
-        resetTimestemps(node->child);
+        resetTimestamps(node->child);
     }
     if (node->sibling != nullptr) {
-        resetTimestemps(node->sibling);
+        resetTimestamps(node->sibling);
     }
 }
 
