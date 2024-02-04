@@ -313,7 +313,9 @@ void cleanUp(vector<MD_Tree>& forest) {
         if (tree.root->markedLeft || tree.root->markedRight) {
             if (tree.root->child != nullptr) {
                 if (tree.root->child->sibling == nullptr) {
+                    tree.root->child->parent = nullptr;
                     newTreeList.push_back(MD_Tree(tree.root->child));
+                    delete tree.root;
                 }
                 else {
                     newTreeList.push_back(MD_Tree(tree.root));
@@ -321,6 +323,9 @@ void cleanUp(vector<MD_Tree>& forest) {
             }
             else if (tree.root->label == LEAF) {
                 newTreeList.push_back(MD_Tree(tree.root));
+            }
+            else {
+                delete tree.root;
             }
         }
         else {
@@ -535,6 +540,7 @@ void addToMDTree(TreeNode*& currentNode, Label& currentModuleType,
             lastNode = lastNode->sibling;
             moduleChildCounter++;
         }
+        delete currentNode;
     }
     else {
         setSibling(lastNode, currentNode);
@@ -657,6 +663,7 @@ vector<MD_Tree> promotion(TreeList& forest) {
         newTreeList.insert(newTreeList.end(), promotedList.begin(), promotedList.end());
         current = current->right;
     }
+    delete &forest;
     cleanUp(newTreeList);
     return newTreeList;
 }
@@ -820,21 +827,21 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
 
         TreeList forest = recursion(graph, pivot, activeEdges, leftNodes, nodeValueMapping);
 
-        cout << "After Recursion: " << endl;
+        /*cout << "After Recursion: " << endl;
         forest.print();
-        cout << endl;
+        cout << endl;*/
 
         refinement(graph, nodeValueMapping, pivot, forest, activeEdges, leftNodes);
 
-        cout << "After Refinement: " << endl;
+        /*cout << "After Refinement: " << endl;
         forest.print();
-        cout << endl;
+        cout << endl;*/
 
         vector<MD_Tree> forestVec = promotion(forest);
 
-        cout << "After Promotion: " << endl;
+        /*cout << "After Promotion: " << endl;
         printForest(forestVec);
-        cout << endl;
+        cout << endl;*/
 
         MD_Tree finalResult = assembly(forestVec, graph, nodeValueMapping, pivot);
         resetTimestamps(finalResult.root);
