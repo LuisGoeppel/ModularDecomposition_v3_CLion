@@ -663,7 +663,6 @@ vector<MD_Tree> promotion(TreeList& forest) {
         newTreeList.insert(newTreeList.end(), promotedList.begin(), promotedList.end());
         current = current->right;
     }
-    delete &forest;
     cleanUp(newTreeList);
     return newTreeList;
 }
@@ -845,6 +844,7 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
 
         MD_Tree finalResult = assembly(forestVec, graph, nodeValueMapping, pivot);
         resetTimestamps(finalResult.root);
+        delete &forest;
 
         return finalResult;
     }
