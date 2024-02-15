@@ -889,27 +889,32 @@ int main(int argc, char* argv[]) {
     }
 
     Graph graph = Graph(adjList);
+    int nVertices = Util::getNumberVertices(graph);
+    int nEdges = Util::getNumberEdges(graph);
 
     auto start = chrono::high_resolution_clock::now();
     MD_Tree mdTree = getModularDecomposition(graph);
     auto end = chrono::high_resolution_clock::now();
 
-    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
 
-    Util::sortTree(mdTree);
-    if (indexMapping.size() > 0) {
-        updateTreeValues(mdTree.root, indexMapping);
-    }
+    /*
     cout << "The final MD-tree: " << endl << endl;
     printTree(mdTree.root);
+     */
+
+    string output = "ModularDecomposition,";
     if (Util::testModularDecompositionTree(graph, mdTree)) {
-        cout << endl << "This result appears to be correct" << endl;
+        output += "0,";
     }
     else {
-        cout << endl << "Unfortunately, this result appears to be incorrect!" << endl;
+        output += "1,";
     }
-    cout << endl << "Time needed: " << duration.count() << " microseconds for a graph with " << Util::getNumberVertices(graph)
-    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
-    Util::checkChildNodeValues(mdTree);
-    cout << endl;
+    output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
+    output += to_string(duration.count());
+
+    /*cout << endl << "Time needed: " << duration.count() << " microseconds for a graph with " << Util::getNumberVertices(graph)
+    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;*/
+
+    cout << output << endl;
 }
