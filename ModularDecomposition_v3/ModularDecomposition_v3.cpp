@@ -908,7 +908,7 @@ int main(int argc, char* argv[]) {
     else {
         cout << endl << "Unfortunately, this result appears to be incorrect!" << endl;
     }
-    cout << endl << "Time needed: " << duration.count() << "microseconds for a graph with " << Util::getNumberVertices(graph)
+    cout << endl << "Time needed: " << duration.count() << " microseconds for a graph with " << Util::getNumberVertices(graph)
     << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
     Util::checkChildNodeValues(mdTree);
     cout << endl;
