@@ -1,15 +1,5 @@
 #include "TreeList.h"
 
-TreeList::~TreeList(){
-    MD_Tree* currentTree = firstElement;
-    MD_Tree* nextTree = currentTree->right;
-    while (currentTree != nullptr) 
-    {
-        delete currentTree;
-        currentTree = nextTree;
-        nextTree = currentTree->right;
-    }
-}
 
 /**
 * Replaces an element in the tree list with two new elements.
@@ -26,7 +16,7 @@ void TreeList::replaceElement(MD_Tree* toReplace, MD_Tree* leftNewElement, MD_Tr
 	if (toReplace == firstElement) {
 		firstElement = leftNewElement;
 	}
-    delete toReplace;
+    //delete toReplace;
 }
 
 /**

@@ -103,7 +103,7 @@ void printTree(const TreeNode* node, int depth) {
     }
 
     if (node->label == LEAF) {
-        cout << "Leaf: " << static_cast<char>(node->value + 'a') << mark << endl;
+        cout << "Leaf: " << node->value << mark << endl;
     }
     else {
         cout << "Label: " << node->label << mark << endl;

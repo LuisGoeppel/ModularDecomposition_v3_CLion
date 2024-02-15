@@ -21,6 +21,8 @@ public:
     static bool isConsecutivelyOrdered(const string& input);
     static bool testModularDecompositionTree(const Graph& graph, const MD_Tree& tree);
     static void checkChildNodeValues(MD_Tree& tree);
+    static int getNumberVertices(const Graph& graph);
+    static int getNumberEdges(const Graph& graph);
 
 private:
     static void sortTreeHelper(TreeNode* node);

@@ -1,0 +1,3 @@
+/home/goeppel/CLionProjects/ModularDecomposition_v3/build/CMakeFiles/ModularDecomposition.dir
+/home/goeppel/CLionProjects/ModularDecomposition_v3/build/CMakeFiles/edit_cache.dir
+/home/goeppel/CLionProjects/ModularDecomposition_v3/build/CMakeFiles/rebuild_cache.dir

@@ -18,8 +18,7 @@ void Util::sortTree(MD_Tree& tree) {
  * @param adjList A reference to the input adjacency list (modified in the method).
  * @return A vector of integers representing differences between ASCII values of old and new node names.
  */
-vector<int> Util::rewriteAdjacencyList(string& adjList)
-{
+vector<int> Util::rewriteAdjacencyList(string& adjList) {
     vector<int> indexMapping;
     string updatedAdjlist = "";
 
@@ -31,22 +30,16 @@ vector<int> Util::rewriteAdjacencyList(string& adjList)
         lines.push_back(line);
     }
 
-    sort(lines.begin(), lines.end());
+    sort(lines.begin(), lines.end(), [](const string& a, const string& b) {
+        return stoi(a) < stoi(b);
+    });
 
     for (int i = 0; i < lines.size(); i++) {
-        char lineChar = lines[i][0];
-        int lineLetter = lineChar - 'a';
-        indexMapping.push_back(lineLetter);
-        updatedAdjlist += lines[i] + "\n";
+        int lineNum = stoi(lines[i]);
+        indexMapping.push_back(lineNum);
+        updatedAdjlist += to_string(i) + ": " + lines[i].substr(lines[i].find(':') + 2) + "\n";
     }
 
-    vector<int> inverseIndices = getInverse(indexMapping);
-    for (int i = 0; i < updatedAdjlist.size(); i++) {
-        int current = updatedAdjlist[i] - 'a';
-        if (current >= 0 && current < inverseIndices.size()) {
-            updatedAdjlist[i] = 'a' + inverseIndices[current];
-        }
-    }
     adjList = updatedAdjlist;
 
     return indexMapping;
@@ -58,22 +51,24 @@ vector<int> Util::rewriteAdjacencyList(string& adjList)
  * @param input The string of node names.
  * @return True if consecutively ordered, false otherwise.
  */
-bool Util::isConsecutivelyOrdered(const string& input)
-{
-    stringstream ss(input);
+bool Util::isConsecutivelyOrdered(const string& input) {
+    istringstream iss(input);
     string line;
-    char expectedChar = 'a';
+    int prevNumber = -1;
 
-    while (std::getline(ss, line)) {
-        if (line.empty()) {
-            continue;
-        }
-        if (line[0] != expectedChar) {
+    while (getline(iss, line)) {
+        std::istringstream lineStream(line);
+        int currentNumber;
+        char colon;
+        if (lineStream >> currentNumber >> colon) {
+            if (currentNumber != prevNumber + 1) {
+                return false;
+            }
+            prevNumber = currentNumber;
+        } else {
             return false;
         }
-        ++expectedChar;
     }
-
     return true;
 }
 
@@ -280,4 +275,16 @@ void Util::checkChildNodeValuesHelper(TreeNode* node)
     if (node->child != nullptr) {
         checkChildNodeValuesHelper(node->child);
     }
+}
+
+int Util::getNumberVertices(const Graph &graph) {
+    return graph.getAdjlist().size();
+}
+
+int Util::getNumberEdges(const Graph &graph) {
+    int count = 0;
+    for (int i = 0; i < graph.getAdjlist().size(); i++) {
+        count += graph.getAdjlist()[i].size();
+    }
+    return count/2;
 }

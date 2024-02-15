@@ -12,8 +12,6 @@ public:
 	void insert(MD_Tree* tree);
 	MD_Tree* getStart();
 	void print();
-
-	~TreeList();
 };
 
 

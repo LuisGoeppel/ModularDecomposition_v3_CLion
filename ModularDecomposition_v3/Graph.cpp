@@ -18,10 +18,6 @@ Graph::Graph(vector<vector<int>>& adjlist)
 Graph::Graph(const string& graphString)
 {
     string graphStringCopy = graphString;
-
-    graphStringCopy.erase(remove(graphStringCopy.begin(), graphStringCopy.end(), ' '), graphStringCopy.end());
-    graphStringCopy.erase(remove(graphStringCopy.begin(), graphStringCopy.end(), ','), graphStringCopy.end());
-
     istringstream iss(graphStringCopy);
     vector<string> lines;
     string line;
@@ -30,13 +26,11 @@ Graph::Graph(const string& graphString)
         lines.push_back(line);
     }
 
-    sort(lines.begin(), lines.end());
-
     for (int i = 0; i < lines.size(); i++) {
         vector<int> currentAdjacencies;
-        for (int j = 2; j < lines[i].size(); j++) {
-            char current = lines[i][j];
-            currentAdjacencies.push_back(static_cast<int>(current - 'a'));
+        vector<string> currentAdjacenciesString = splitString(lines[i]);
+        for (int j = 1; j < currentAdjacenciesString.size(); j++) {
+            currentAdjacencies.push_back(stoi(currentAdjacenciesString[j]));
         }
         adjlist.push_back(currentAdjacencies);
     }
@@ -180,5 +174,16 @@ void Graph::dfs(int node, vector<bool>& visited, vector<int>& componentNodes) co
             dfs(neighbor, visited, componentNodes);
         }
     }
+}
+
+vector<string> Graph::splitString(const string& input) const {
+    vector<string> tokens;
+    istringstream iss(input);
+
+    string token;
+    while (getline(iss, token, ' ')) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
 

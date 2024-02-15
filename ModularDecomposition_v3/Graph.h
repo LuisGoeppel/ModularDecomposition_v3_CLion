@@ -23,4 +23,5 @@ public:
 
 private:
     void dfs(int node, vector<bool>& visited, vector<int>& componentNodes) const;
+    vector<string> splitString(const string& input) const;
 };

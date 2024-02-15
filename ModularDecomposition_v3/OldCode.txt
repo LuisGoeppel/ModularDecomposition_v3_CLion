@@ -143,6 +143,32 @@ p: a, m, q
 q: a, m, n, p, r
 r: q
 
+Graph::Graph(const string& graphString)
+{
+    string graphStringCopy = graphString;
+
+    graphStringCopy.erase(remove(graphStringCopy.begin(), graphStringCopy.end(), ' '), graphStringCopy.end());
+    graphStringCopy.erase(remove(graphStringCopy.begin(), graphStringCopy.end(), ','), graphStringCopy.end());
+
+    istringstream iss(graphStringCopy);
+    vector<string> lines;
+    string line;
+
+    while (getline(iss, line)) {
+        lines.push_back(line);
+    }
+
+    sort(lines.begin(), lines.end());
+
+    for (int i = 0; i < lines.size(); i++) {
+        vector<int> currentAdjacencies;
+        for (int j = 2; j < lines[i].size(); j++) {
+            char current = lines[i][j];
+            currentAdjacencies.push_back(static_cast<int>(current - 'a'));
+        }
+        adjlist.push_back(currentAdjacencies);
+    }
+}
 
 /**
 * Normally, the modular decomposition for the subgraphs would be performed recursively.

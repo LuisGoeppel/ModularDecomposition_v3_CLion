@@ -844,7 +844,7 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
 
         MD_Tree finalResult = assembly(forestVec, graph, nodeValueMapping, pivot);
         resetTimestamps(finalResult.root);
-        delete &forest;
+        //delete &forest;
 
         return finalResult;
     }
@@ -869,14 +869,19 @@ MD_Tree getModularDecomposition(const Graph& graph) {
     return getModularDecomposition(graph, nodeValueMapping);
 }
 
+
 /**
 * The main method. Doesn't do that much.
 */
-int main() {
-    string filePath;
-    cout << "Input the path to the file containing the graph as adjacency list: ";
-    cin >> filePath;
-    string adjList = readFile(filePath);
+int main(int argc, char* argv[]) {
+    string adjList = "";
+    if (argc >= 2) {
+        string filePath = argv[1];
+        adjList = readFile(filePath);
+    } else {
+        cout << "Please provide valid arguments!" << endl;
+        return 1;
+    }
     vector<int> indexMapping;
 
     if (!Util::isConsecutivelyOrdered(adjList)) {
@@ -903,7 +908,8 @@ int main() {
     else {
         cout << endl << "Unfortunately, this result appears to be incorrect!" << endl;
     }
-    cout << endl << "Time needed: " << duration.count() << "microseconds" << endl << endl;
+    cout << endl << "Time needed: " << duration.count() << "microseconds for a graph with " << Util::getNumberVertices(graph)
+    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
     Util::checkChildNodeValues(mdTree);
     cout << endl;
 }
