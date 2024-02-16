@@ -125,7 +125,7 @@ bool Util::testModularDecompositionTree(const Graph& graph, const MD_Tree& tree)
                 }
 
                 if (hasConnectionGraph != hasConnectionTree) {
-                    cout << lhs << ", " << rhs << endl;
+                    //cout << "Error! Nodes " << lhs << " and " << rhs  << " have different connections in the graph and the MD_Tree!" << endl;
                     return false;
                 }
             }

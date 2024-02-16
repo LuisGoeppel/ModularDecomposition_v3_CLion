@@ -820,7 +820,7 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
     }
 
     if (graph.isConnected()) {
-        int pivot = graph.getAdjlist().size() >= 14 ? 14 : 0;
+        int pivot = 0;
         vector<vector<int>> activeEdges;
         vector<bool> leftNodes;
 
