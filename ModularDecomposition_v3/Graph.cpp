@@ -187,3 +187,15 @@ vector<string> Graph::splitString(const string& input) const {
     return tokens;
 }
 
+void Graph::print() const {
+    cout << "Graph:" << endl;
+    for (int i = 0; i < adjlist.size(); i++) {
+        cout << i << ": ";
+        for (int j = 0; j < adjlist[i].size(); j++) {
+            cout << adjlist[i][j] << " ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+

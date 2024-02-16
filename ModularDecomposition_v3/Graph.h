@@ -20,6 +20,7 @@ public:
         vector<vector<int>>& nodeMapping, int nSubgraphs) const;
     bool isConnected() const;
     vector<vector<int>> getConnectedComponents() const;
+    void print() const;
 
 private:
     void dfs(int node, vector<bool>& visited, vector<int>& componentNodes) const;

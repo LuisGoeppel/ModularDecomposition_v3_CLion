@@ -872,7 +872,7 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
 /**
 * The main method. Doesn't do that much.
-*/
+
 int main(int argc, char* argv[]) {
     string adjList = "";
     if (argc >= 2) {
@@ -898,10 +898,10 @@ int main(int argc, char* argv[]) {
 
     auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
 
-    /*
+
     cout << "The final MD-tree: " << endl << endl;
     printTree(mdTree.root);
-     */
+
 
     string output = "ModularDecomposition,";
     if (Util::testModularDecompositionTree(graph, mdTree)) {
@@ -913,8 +913,25 @@ int main(int argc, char* argv[]) {
     output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
     output += to_string(duration.count());
 
-    /*cout << endl << "Time needed: " << duration.count() << " microseconds for a graph with " << Util::getNumberVertices(graph)
-    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;*/
+    cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
+    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
 
     cout << output << endl;
+}*/
+
+int main() {
+    MD_Tree tree = Util::createRandomModularDecompositionTree(10, true);
+    Util::sortTree(tree);
+    cout << endl << endl;
+    Graph graph = Util::createGraphFromTree(tree);
+    graph.print();
+    MD_Tree mdTree = getModularDecomposition(graph);
+    Util::sortTree(mdTree);
+    cout << "Initial MD_Tree:" << endl;
+    printTree(tree.root);
+    cout << endl << endl;
+    cout << "Calculated MD_Tree:" << endl;
+    printTree(mdTree.root);
 }
+
+

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <queue>
 #include <vector>
+#include <random>
 
 #include "MD_Tree.h"
 #include "Graph.h"
@@ -23,6 +24,8 @@ public:
     static void checkChildNodeValues(MD_Tree& tree);
     static int getNumberVertices(const Graph& graph);
     static int getNumberEdges(const Graph& graph);
+    static MD_Tree createRandomModularDecompositionTree(int nVertices, bool isCoGraph);
+    static Graph createGraphFromTree(const MD_Tree& tree);
 
 private:
     static void sortTreeHelper(TreeNode* node);
@@ -30,5 +33,8 @@ private:
     static TreeNode* getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs);
     static TreeNode* getCorrspondingTreeNode(TreeNode* currentNode, int node);
     static void checkChildNodeValuesHelper(TreeNode* node);
+    static void removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, bool isParent, bool& removedNode);
+    static void getHighestVertexValue(TreeNode* node, int& highestValue);
+    static Label getLabel(int n);
 };
 

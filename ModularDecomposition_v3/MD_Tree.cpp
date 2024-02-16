@@ -48,8 +48,12 @@ bool operator==(const TreeNode& lhs, const TreeNode& rhs) {
 */
 void setChild(TreeNode* lhs, TreeNode* rhs)
 {
-    lhs->child = rhs;
-    rhs->parent = lhs;
+    if (lhs != nullptr) {
+        lhs->child = rhs;
+    }
+    if (rhs != nullptr) {
+        rhs->parent = lhs;
+    }
 }
 
 /**
@@ -60,8 +64,12 @@ void setChild(TreeNode* lhs, TreeNode* rhs)
 */
 void setSibling(TreeNode* lhs, TreeNode* rhs)
 {
-    lhs->sibling = rhs;
-    rhs->parent = lhs->parent;
+    if (lhs != nullptr) {
+        lhs->sibling = rhs;
+    }
+    if (rhs != nullptr) {
+        rhs->parent = lhs->parent;
+    }
 }
 
 /**

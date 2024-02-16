@@ -125,7 +125,7 @@ bool Util::testModularDecompositionTree(const Graph& graph, const MD_Tree& tree)
                 }
 
                 if (hasConnectionGraph != hasConnectionTree) {
-                    //cout << "Error! Nodes " << lhs << " and " << rhs  << " have different connections in the graph and the MD_Tree!" << endl;
+                    cout << "Error! Nodes " << lhs << " and " << rhs  << " have different connections in the graph and the MD_Tree!" << endl;
                     return false;
                 }
             }
@@ -287,4 +287,174 @@ int Util::getNumberEdges(const Graph &graph) {
         count += graph.getAdjlist()[i].size();
     }
     return count/2;
+}
+
+MD_Tree Util::createRandomModularDecompositionTree(int nVertices, bool isCoGraph) {
+
+    random_device rd;
+    mt19937 gen(rd());
+    int upperBoundNodeTypes = isCoGraph ? 1 : 2;
+    uniform_int_distribution<int> randomNodeType(0, upperBoundNodeTypes);
+    uniform_int_distribution<int> randomRootNodeType(1, upperBoundNodeTypes);
+    uniform_int_distribution<int> randomAmountChildNodes(2, 5);
+    uniform_int_distribution<int> randomBool(0, 1);
+    int vertexCount;
+    TreeNode* rootNode;
+
+    do {
+        vertexCount = 0;
+        vector<int> remainingVertices(nVertices);
+        iota(remainingVertices.begin(), remainingVertices.end(), 0);
+        queue<TreeNode*> remainingInnerNodes;
+        rootNode = new TreeNode(getLabel(randomRootNodeType(gen)));
+        remainingInnerNodes.push(rootNode);
+
+        while (!remainingInnerNodes.empty()) {
+            TreeNode* currentNode = remainingInnerNodes.front();
+            remainingInnerNodes.pop();
+
+            int nChildren = min(randomAmountChildNodes(gen), static_cast<int>(remainingVertices.size()));
+            if (nChildren <= 2 && currentNode->label == PRIME) {
+                currentNode->label = SERIES;
+            }
+            currentNode->nChildNodes = nChildren;
+            TreeNode* currentChild;
+            TreeNode* lastChild;
+            for (int i = 0; i < nChildren; i++) {
+                int isLeafNode = remainingVertices.size() >= 2 ? randomBool(gen) : 1;
+                if (isLeafNode == 1) {
+                    uniform_int_distribution<int> randomVertex(0, remainingVertices.size() - 1);
+                    int vertexIndex = randomVertex(gen);
+                    int vertex = remainingVertices[vertexIndex];
+                    remainingVertices.erase(remainingVertices.begin() + vertexIndex);
+                    vertexCount++;
+                    currentChild = new TreeNode(vertex);
+                } else {
+                    Label currentLabel;
+                    do {
+                        currentLabel = getLabel(randomNodeType(gen));
+                    } while (currentLabel == currentNode->label);
+                    currentChild = new TreeNode(currentLabel);
+                    remainingInnerNodes.push(currentChild);
+                }
+                if (i == 0) {
+                    setChild(currentNode, currentChild);
+                } else {
+                    setSibling(lastChild, currentChild);
+                }
+                lastChild = currentChild;
+            }
+        }
+    } while (vertexCount < nVertices);
+
+    bool removedNodes = false;
+    do {
+        removedNodes = false;
+        removeFalseInnerNodes(rootNode, rootNode, false, removedNodes);
+    } while (removedNodes);
+
+    MD_Tree* result = new MD_Tree(rootNode);
+    return *result;
+}
+
+Graph Util::createGraphFromTree(const MD_Tree& tree) {
+    int nVertices = 0;
+    getHighestVertexValue(tree.root, nVertices);
+    nVertices++;
+    vector<vector<int>> adjList(nVertices);
+    for (int lhs = 0; lhs < nVertices; lhs++) {
+        for (int rhs = 0; rhs < nVertices; rhs++) {
+            if (lhs != rhs) {
+
+                TreeNode* lhsNode = getCorrspondingTreeNode(tree.root, lhs);
+                TreeNode* currentAncestor = lhsNode->parent;
+                while (currentAncestor != nullptr) {
+                    vector<int> currentLeafNodes = getPreOrderLeafs(currentAncestor);
+                    if (find(currentLeafNodes.begin(), currentLeafNodes.end(), rhs) != currentLeafNodes.end()) {
+                        break;
+                    }
+                    currentAncestor = currentAncestor->parent;
+                }
+
+                switch(currentAncestor->label) {
+                    case PARALLEL:
+                        // do nothing
+                        break;
+                    case SERIES:
+                        adjList[lhs].push_back(rhs);
+                        break;
+                    case PRIME:
+                        adjList[lhs].push_back(rhs);
+                        break;
+                    case LEAF:
+                        // do nothing;
+                        break;
+                }
+            }
+        }
+    }
+    return Graph(adjList);
+}
+
+Label Util::getLabel(int n) {
+    switch (n) {
+        case 0:
+            return PARALLEL;
+        case 1:
+            return SERIES;
+        case 2:
+            return PRIME;
+        default:
+            return static_cast<Label>(NULL);
+    }
+}
+
+void Util::removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, bool isParent, bool& removedNode) {
+    if (currentNode->label != LEAF) {
+        int nChildren = 0;
+        TreeNode* nextChild = currentNode->child;
+        while(nextChild != nullptr) {
+            nChildren++;
+            nextChild = nextChild->sibling;
+        }
+        if (nChildren == 0) {
+            if (isParent) {
+                setChild(callingNode, currentNode->sibling);
+            } else {
+                setSibling(callingNode, currentNode->sibling);
+            }
+            removedNode = true;
+        } else if (nChildren == 1) {
+            if (isParent) {
+                setChild(callingNode, currentNode->child);
+                setSibling(currentNode->child, currentNode->sibling);
+            } else {
+                setSibling(callingNode, currentNode->child);
+                setSibling(currentNode->child, currentNode->sibling);
+            }
+            removedNode = true;
+        }
+    }
+
+    if (currentNode->sibling != nullptr) {
+        removeFalseInnerNodes(currentNode->sibling, currentNode, false, removedNode);
+    }
+    if (currentNode->child != nullptr) {
+        removeFalseInnerNodes(currentNode->child, currentNode, true, removedNode);
+    }
+}
+
+void Util::getHighestVertexValue(TreeNode* node, int& highestValue) {
+    if (node->label == LEAF) {
+        if (node->value > highestValue) {
+            highestValue = node->value;
+        }
+    }
+
+    if (node->sibling != nullptr) {
+        getHighestVertexValue(node->sibling, highestValue);
+    }
+    if (node->child != nullptr) {
+        getHighestVertexValue(node->child, highestValue);
+    }
 }
