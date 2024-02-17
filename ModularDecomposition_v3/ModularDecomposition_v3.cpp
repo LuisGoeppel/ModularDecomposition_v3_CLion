@@ -737,13 +737,17 @@ MD_Tree assembly(vector<MD_Tree>& forest, const Graph& graph, vector<TreeNode*>&
             int rightPointer = forest[currentMaxModule].rightIndex;
 
             if (leftPointer < currentLeft) {
+                for (int i = currentLeft - 1; i >= leftPointer; i--) {
+                    maxModuleIndices.push(i);
+                }
                 currentLeft = leftPointer;
-                maxModuleIndices.push(leftPointer);
                 addedLeft = true;
             }
             if (rightPointer > currentRight) {
+                for (int i = currentRight; i < rightPointer; i++) {
+                    maxModuleIndices.push(i);
+                }
                 currentRight = rightPointer;
-                maxModuleIndices.push(rightPointer - 1);
                 addedRight = true;
             }
         } while (!maxModuleIndices.empty());
@@ -835,13 +839,13 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
     }
 
     if (graph.isConnected()) {
-        int pivot = 1;
+        int pivot = 0;
         vector<vector<int>> activeEdges;
         vector<bool> leftNodes;
 
         TreeList forest = recursion(graph, pivot, activeEdges, leftNodes, nodeValueMapping);
 
-        if (graph.getAdjlist().size() == 8) {
+        if (false) {
             cout << "After Recursion: " << endl;
             forest.print();
             cout << endl;
@@ -849,7 +853,7 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
 
         refinement(graph, nodeValueMapping, pivot, forest, activeEdges, leftNodes);
 
-        if (graph.getAdjlist().size() == 8) {
+        if (false) {
             cout << "After Refinement: " << endl;
             forest.print();
             cout << endl;
@@ -857,7 +861,7 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
 
         vector<MD_Tree> forestVec = promotion(forest);
 
-        if (graph.getAdjlist().size() == 8) {
+        if (false) {
             cout << "After Promotion: " << endl;
             printForest(forestVec);
             cout << endl;
@@ -893,7 +897,7 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
 /**
 * The main method.
-*/
+
 int main(int argc, char* argv[]) {
     string adjList = "";
     if (argc >= 2) {
@@ -938,12 +942,12 @@ int main(int argc, char* argv[]) {
     << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
 
     cout << output << endl;
-}
+}*/
 
-/*
+
 int main() {
-    int nRepetitions = 500;
-    int nVertices = 30;
+    int nRepetitions = 1000;
+    int nVertices = 34;
     bool useCoGraphs = false;
 
     int equalCounter = 0;
@@ -959,6 +963,9 @@ int main() {
         string tree2Representation = generateTreeString(mdTree.root);
         if (tree1Representation.compare(tree2Representation) == 0) {
             equalCounter++;
+            if (equalCounter % 100 == 0) {
+                cout << endl << "Equal: " << equalCounter << " of " << (i + 1) << endl;
+            }
         } else {
             cout << "Not equal:" << endl;
 
@@ -972,5 +979,5 @@ int main() {
         }
     }
     cout << endl << "Equal: " << equalCounter << endl;
+    cout << "Not Equal: " << (nRepetitions - equalCounter) << endl;
 }
-*/
