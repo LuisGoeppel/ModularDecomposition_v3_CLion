@@ -277,10 +277,22 @@ void Util::checkChildNodeValuesHelper(TreeNode* node)
     }
 }
 
+/**
+ * Returns the number of vertices for a given graph.
+ *
+ * @param graph The given graph.
+ * @return The number of vertices.
+ */
 int Util::getNumberVertices(const Graph &graph) {
     return graph.getAdjlist().size();
 }
 
+/**
+ * Returns the number of edges for a given graph.
+ *
+ * @param graph The given graph.
+ * @return The number of edges.
+ */
 int Util::getNumberEdges(const Graph &graph) {
     int count = 0;
     for (int i = 0; i < graph.getAdjlist().size(); i++) {
@@ -289,14 +301,22 @@ int Util::getNumberEdges(const Graph &graph) {
     return count/2;
 }
 
+/**
+ * Generates a random modular decomposition tree.
+ *
+ * @param nVertices The number of vertices the random tree should have.
+ * @param isCoGraph If the tree should be a cograph, i.e. have only PARALLEL and SERIES nodes
+ * @return A randomly generated modular decomposition tree.
+ */
 MD_Tree Util::createRandomModularDecompositionTree(int nVertices, bool isCoGraph) {
 
     random_device rd;
     mt19937 gen(rd());
     int upperBoundNodeTypes = isCoGraph ? 1 : 2;
+    int maxAmountChildren = max(5, nVertices/5);
     uniform_int_distribution<int> randomNodeType(0, upperBoundNodeTypes);
     uniform_int_distribution<int> randomRootNodeType(1, upperBoundNodeTypes);
-    uniform_int_distribution<int> randomAmountChildNodes(2, 5);
+    uniform_int_distribution<int> randomAmountChildNodes(2, maxAmountChildren);
     uniform_int_distribution<int> randomBool(0, 1);
     int vertexCount;
     TreeNode* rootNode;
@@ -314,7 +334,7 @@ MD_Tree Util::createRandomModularDecompositionTree(int nVertices, bool isCoGraph
             remainingInnerNodes.pop();
 
             int nChildren = min(randomAmountChildNodes(gen), static_cast<int>(remainingVertices.size()));
-            if (nChildren <= 2 && currentNode->label == PRIME) {
+            if (nChildren <= 3 && currentNode->label == PRIME) {
                 currentNode->label = SERIES;
             }
             currentNode->nChildNodes = nChildren;
@@ -323,17 +343,19 @@ MD_Tree Util::createRandomModularDecompositionTree(int nVertices, bool isCoGraph
             for (int i = 0; i < nChildren; i++) {
                 int isLeafNode = remainingVertices.size() >= 2 ? randomBool(gen) : 1;
                 if (isLeafNode == 1) {
-                    uniform_int_distribution<int> randomVertex(0, remainingVertices.size() - 1);
-                    int vertexIndex = randomVertex(gen);
-                    int vertex = remainingVertices[vertexIndex];
-                    remainingVertices.erase(remainingVertices.begin() + vertexIndex);
-                    vertexCount++;
-                    currentChild = new TreeNode(vertex);
+                    if (!remainingVertices.empty()) {
+                        uniform_int_distribution<int> randomVertex(0, remainingVertices.size() - 1);
+                        int vertexIndex = randomVertex(gen);
+                        int vertex = remainingVertices[vertexIndex];
+                        remainingVertices.erase(remainingVertices.begin() + vertexIndex);
+                        vertexCount++;
+                        currentChild = new TreeNode(vertex);
+                    }
                 } else {
-                    Label currentLabel;
-                    do {
-                        currentLabel = getLabel(randomNodeType(gen));
-                    } while (currentLabel == currentNode->label);
+                    Label currentLabel = getLabel(randomNodeType(gen));
+                    if (currentLabel == currentNode->label) {
+                        currentLabel = generateDifferentLabel(currentNode->label, isCoGraph);
+                    }
                     currentChild = new TreeNode(currentLabel);
                     remainingInnerNodes.push(currentChild);
                 }
@@ -345,18 +367,34 @@ MD_Tree Util::createRandomModularDecompositionTree(int nVertices, bool isCoGraph
                 lastChild = currentChild;
             }
         }
-    } while (vertexCount < nVertices);
+        remainingVertices.clear();
+    } while (vertexCount != nVertices);
 
-    bool removedNodes = false;
+    int res;
     do {
-        removedNodes = false;
-        removeFalseInnerNodes(rootNode, rootNode, false, removedNodes);
-    } while (removedNodes);
+        res = removeFalseInnerNodes(rootNode, nullptr, false);
+        updateParentPointersAndModuleTypes(rootNode, nullptr, false);
+    } while (res == 1);
+
+    if (res == -1) {
+        return createRandomModularDecompositionTree(nVertices, isCoGraph);
+    }
 
     MD_Tree* result = new MD_Tree(rootNode);
-    return *result;
+    if (isValidModularDecompositionTree(*result)) {
+        return *result;
+    } else {
+        return createRandomModularDecompositionTree(nVertices, isCoGraph);
+    }
 }
 
+/**
+ * Creates a graph based on a modular decomposition tree. It is assumed, that in all PRIME modules the
+ * children are connected via a simple path from the left-most to the right-most element.
+ *
+ * @param tree The tree to create the graph for.
+ * @return The created graph.
+ */
 Graph Util::createGraphFromTree(const MD_Tree& tree) {
     int nVertices = 0;
     getHighestVertexValue(tree.root, nVertices);
@@ -376,19 +414,28 @@ Graph Util::createGraphFromTree(const MD_Tree& tree) {
                     currentAncestor = currentAncestor->parent;
                 }
 
-                switch(currentAncestor->label) {
-                    case PARALLEL:
-                        // do nothing
-                        break;
-                    case SERIES:
+                if (currentAncestor->label == PRIME) {
+                    int lhsChildIndex = 0;
+                    int rhsChildIndex = 0;
+                    int childCounter = 0;
+                    TreeNode* currentChild = currentAncestor->child;
+                    while (currentChild != nullptr) {
+                        vector<int> currentLeafNodes = getPreOrderLeafs(currentChild);
+                        if (find(currentLeafNodes.begin(), currentLeafNodes.end(), lhs) != currentLeafNodes.end()) {
+                            lhsChildIndex = childCounter;
+                        }
+                        if (find(currentLeafNodes.begin(), currentLeafNodes.end(), rhs) != currentLeafNodes.end()) {
+                            rhsChildIndex = childCounter;
+                        }
+                        currentChild = currentChild->sibling;
+                        childCounter++;
+                    }
+
+                    if (abs(lhsChildIndex - rhsChildIndex) == 1) {
                         adjList[lhs].push_back(rhs);
-                        break;
-                    case PRIME:
-                        adjList[lhs].push_back(rhs);
-                        break;
-                    case LEAF:
-                        // do nothing;
-                        break;
+                    }
+                } else if (currentAncestor -> label == SERIES) {
+                    adjList[lhs].push_back(rhs);
                 }
             }
         }
@@ -396,6 +443,12 @@ Graph Util::createGraphFromTree(const MD_Tree& tree) {
     return Graph(adjList);
 }
 
+/**
+ * Converts a number to the corresponding TreeNode-Label.
+ *
+ * @param n The number.
+ * @return The label.
+ */
 Label Util::getLabel(int n) {
     switch (n) {
         case 0:
@@ -409,7 +462,25 @@ Label Util::getLabel(int n) {
     }
 }
 
-void Util::removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, bool isParent, bool& removedNode) {
+/**
+ * Removes inner nodes that have no children or only one child from a given modular decomposition tree.
+ * Adjusts the label of an inner node if needed, as a PRIME node is not possible with only two children.
+ *
+ * @param currentNode The current root node of the tree.
+ * @param callingNode The node that called this procedure recursively.
+ * @param isParent If the calling node is the parent of the called node.
+ * @return -1 if the tree is invalid, 0 if no node had to be removed and 1 if at least one node was removed.
+ */
+int Util::removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, bool isParent) {
+    if (currentNode == currentNode->sibling) {
+        return -1;
+    }
+
+    bool removedNode = false;
+    if (currentNode->sibling != nullptr) {
+        removedNode |= removeFalseInnerNodes(currentNode->sibling, currentNode, false);
+    }
+
     if (currentNode->label != LEAF) {
         int nChildren = 0;
         TreeNode* nextChild = currentNode->child;
@@ -423,7 +494,7 @@ void Util::removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, b
             } else {
                 setSibling(callingNode, currentNode->sibling);
             }
-            removedNode = true;
+            return 1;
         } else if (nChildren == 1) {
             if (isParent) {
                 setChild(callingNode, currentNode->child);
@@ -432,18 +503,27 @@ void Util::removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, b
                 setSibling(callingNode, currentNode->child);
                 setSibling(currentNode->child, currentNode->sibling);
             }
-            removedNode = true;
+            if (currentNode->parent != nullptr && currentNode->child->label == currentNode->parent->label) {
+                currentNode->child->label = generateDifferentLabel(currentNode->parent->label, true);
+            }
+            return 1;
+        } else if (nChildren < 4 && currentNode->label == PRIME) {
+            currentNode->label = generateDifferentLabel(currentNode->label, false);
         }
     }
 
-    if (currentNode->sibling != nullptr) {
-        removeFalseInnerNodes(currentNode->sibling, currentNode, false, removedNode);
-    }
     if (currentNode->child != nullptr) {
-        removeFalseInnerNodes(currentNode->child, currentNode, true, removedNode);
+        removedNode |= removeFalseInnerNodes(currentNode->child, currentNode, true);
     }
+    return removedNode ? 1 : 0;
 }
 
+/**
+ * Returns the highest leaf node value in the current subtree.
+ *
+ * @param node The node inducing the current subtree.
+ * @param highestValue The currently highest value.
+ */
 void Util::getHighestVertexValue(TreeNode* node, int& highestValue) {
     if (node->label == LEAF) {
         if (node->value > highestValue) {
@@ -458,3 +538,108 @@ void Util::getHighestVertexValue(TreeNode* node, int& highestValue) {
         getHighestVertexValue(node->child, highestValue);
     }
 }
+
+/**
+ * Generates a TreeNode Label that is different than the given one.
+ *
+ * @param label The given label.
+ * @param isCoGraph If the current graph is a cograph.
+ * @return A label different to the given one.
+ */
+Label Util::generateDifferentLabel(const Label &label, bool isCoGraph) {
+    if (isCoGraph) {
+        if (label == PARALLEL) {
+            return SERIES;
+        } else {
+            return PARALLEL;
+        }
+    } else {
+        if (label == PARALLEL) {
+            return SERIES;
+        } else if (label == SERIES) {
+            return PRIME;
+        } else {
+            return PARALLEL;
+        }
+    }
+}
+
+/**
+ * Computes if a given modular decomposition tree contains the correct amount of leave nodes and
+ * has no parent and child node with the same label.
+ *
+ * @param tree The modular decomposition tree to check.
+ * @return If the given tree is valid.
+ */
+bool Util::isValidModularDecompositionTree(const MD_Tree &tree) {
+    unordered_set<int> leaves;
+    return isValidTreeHelper(tree.root, leaves);
+}
+
+/**
+ * A recursive helper function for the validTree calculation.
+ *
+ * @param node The current node in the tree.
+ * @param leaves A set containing all leaves that have already been found.
+ * @return If the current subtree is valid.
+ */
+bool Util::isValidTreeHelper(TreeNode* node, unordered_set<int>& leaves) {
+    if (node->label == LEAF) {
+        if (leaves.find(node->value) == leaves.end()) {
+            leaves.insert(node->value);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    if (node->parent != nullptr) {
+        if (node->parent->label == node->label) {
+            return false;
+        }
+    }
+
+    if (node->sibling != nullptr) {
+        if (!isValidTreeHelper(node->sibling, leaves)) {
+            return false;
+        }
+    }
+    if (node->child != nullptr) {
+        if (!isValidTreeHelper(node->child, leaves)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Updates the parent pointers of the given modular decomposition tree and adjusts the prime module types if there
+ * are two or more PRIME modules that are children of the same node.
+ *
+ * @param currentNode The current node in the tree.
+ * @param parentNode The parent node of the current node.
+ * @param primeModule If there is already one PRIME module at the current level.
+ */
+void Util::updateParentPointersAndModuleTypes(TreeNode* currentNode, TreeNode* parentNode, bool primeModule) {
+    if (parentNode != nullptr) {
+        currentNode->parent = parentNode;
+        if (currentNode->parent->label == currentNode->label) {
+            currentNode->label = generateDifferentLabel(currentNode->label, true);
+        }
+    }
+
+    if (currentNode->label == PRIME) {
+        if (primeModule) {
+            currentNode->label = generateDifferentLabel(currentNode->parent->label, true);
+        }
+        primeModule = true;
+    }
+
+    if (currentNode -> sibling != nullptr) {
+        updateParentPointersAndModuleTypes(currentNode->sibling, parentNode, primeModule);
+    }
+    if (currentNode -> child != nullptr) {
+        updateParentPointersAndModuleTypes(currentNode->child, currentNode, false);
+    }
+}
+
+

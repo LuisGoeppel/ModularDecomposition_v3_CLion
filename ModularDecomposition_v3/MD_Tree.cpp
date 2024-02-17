@@ -9,10 +9,10 @@ label(LEAF), markedLeft(false), markedRight(false), child(nullptr), sibling(null
 TreeNode::TreeNode(Label l) : value(-1), timestamp(-1), nChildNodes(0), nMarkedChildNodes(0), label(l), includeNode(false),
 markedLeft(false), markedRight(false), child(nullptr), sibling(nullptr), parent(nullptr) {}
 
-MD_Tree::MD_Tree(TreeNode* r) : root(r), leftIndex(-1), rightIndex(-1),
+MD_Tree::MD_Tree(TreeNode* r) : root(r), leftIndex(-1), rightIndex(-1), isLeftOfPivot(false),
 left(nullptr), right(nullptr) {}
 
-MD_Tree::MD_Tree() : root(nullptr), leftIndex(-1), rightIndex(-1),
+MD_Tree::MD_Tree() : root(nullptr), leftIndex(-1), rightIndex(-1), isLeftOfPivot(false),
 left(nullptr), right(nullptr) {}
 
 
@@ -23,7 +23,7 @@ left(nullptr), right(nullptr) {}
 bool compareTreeNodePointers(const TreeNode* lhs, const TreeNode* rhs)
 {
     if (lhs->value == rhs->value) {
-        return lhs->label < rhs->label;
+        return getMaxLeafValue(lhs) < getMaxLeafValue(rhs);
     }
     return lhs->value < rhs->value;
 }
@@ -67,7 +67,7 @@ void setSibling(TreeNode* lhs, TreeNode* rhs)
     if (lhs != nullptr) {
         lhs->sibling = rhs;
     }
-    if (rhs != nullptr) {
+    if (rhs != nullptr && lhs != nullptr) {
         rhs->parent = lhs->parent;
     }
 }
@@ -125,6 +125,43 @@ void printTree(const TreeNode* node, int depth) {
             printTree(node->sibling, depth);
         }
     }
+}
+
+string generateTreeString(const TreeNode* node, int depth) {
+    string result;
+
+    for (int i = 0; i < depth; ++i) {
+        result += "  ";
+    }
+
+    string mark = "";
+    if (node->markedLeft && node->markedRight) {
+        mark = ", Mark: Left & Right";
+    }
+    else if (node->markedLeft) {
+        mark = ", Mark: Left";
+    }
+    else if (node->markedRight) {
+        mark = ", Mark: Right";
+    }
+
+    if (node->label == LEAF) {
+        result += "Leaf: " + to_string(node->value) + mark + "\n";
+    }
+    else {
+        result += "Label: " + to_string(node->label) + mark + "\n";
+    }
+
+    if (node->child) {
+        result += generateTreeString(node->child, depth + 1);
+    }
+    if (depth > 0) {
+        if (node->sibling) {
+            result += generateTreeString(node->sibling, depth);
+        }
+    }
+
+    return result;
 }
 
 /**
@@ -260,4 +297,26 @@ void insertMaxContSubTrees(TreeNode* node, unordered_set<TreeNode*>& result, int
     }
     
     node->nMarkedChildNodes = 0;
+}
+
+/**
+ * Returns the maximum value of all leave descendents of the given node.
+ *
+ * @param node The given node
+ * @return The maximum value of all leave descendants.
+ */
+int getMaxLeafValue(const TreeNode *node) {
+    if (node->label == LEAF) {
+        return node->value;
+    }
+    int maxLeafValue = -1;
+    TreeNode* nextChild = node->child;
+    while(nextChild != nullptr) {
+        int currentValue = getMaxLeafValue(nextChild);
+        if (currentValue > maxLeafValue) {
+            maxLeafValue = currentValue;
+        }
+        nextChild = nextChild->sibling;
+    }
+    return maxLeafValue;
 }

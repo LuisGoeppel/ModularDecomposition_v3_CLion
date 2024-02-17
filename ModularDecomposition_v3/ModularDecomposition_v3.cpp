@@ -124,6 +124,19 @@ MD_Tree constructTree(vector<TreeNode*> X, Label label) {
 }
 
 /**
+ * Updates additional tree information like the placement in respect to the pivot or the markings of the root
+ * of one tree based on this information on another tree.
+ *
+ * @param toUpdate The tree that has to be updated.
+ * @param toCopy The tree to get the update information from.
+ */
+void updateTreeInformation(MD_Tree* toUpdate, MD_Tree* toCopy) {
+    toUpdate->isLeftOfPivot = toCopy->isLeftOfPivot;
+    toUpdate->root->markedLeft = toCopy->root->markedLeft;
+    toUpdate->root->markedRight = toCopy->root->markedRight;
+}
+
+/**
 * Refines a MD_Forest with a node that is not prime. For details on the refinement process,
 * see the algorithm description.
 *
@@ -155,6 +168,8 @@ void refineByNonPrimeNode(TreeList& forest, TreeNode* p,
 
         if (p->parent == nullptr) {
             MD_Tree* currentTree = forest.getCorrespondingTree(p);
+            updateTreeInformation(Ta, currentTree);
+            updateTreeInformation(Tb, currentTree);
 
             if (isLeftSplit) {
                 forest.replaceElement(currentTree, Ta, Tb);
@@ -181,7 +196,7 @@ void refineByNonPrimeNode(TreeList& forest, TreeNode* p,
 * @param forest The forest that should be refined.
 * @param isLeftSplit If a left-split should be used (right-split otherwise).
 */
-void refineByPrimeNode(TreeNode* node, bool isLeftSplit) {
+void refineByPrimeNode(TreeNode* node, bool isLeftSplit, unordered_set<TreeNode*>& maxSubtrees) {
     markNodeAndAncestors(node, isLeftSplit);
     markChildren(node, isLeftSplit);
 }
@@ -205,19 +220,16 @@ void refineBySet(TreeList& forest, vector<TreeNode*> treeNodes,
 
     unordered_set<TreeNode*> maxSubtreeParents;
     for (TreeNode* node : maxSubtrees) {
-        if (node->parent == nullptr) {
-            maxSubtreeParents.insert(node);
-        }
-        else {
+        if (node->parent != nullptr) {
             maxSubtreeParents.insert(node->parent);
         }
     }
 
     for (TreeNode* parentNode : maxSubtreeParents) {
         MD_Tree* correspondingTree = forest.getCorrespondingTree(parentNode);
-        bool leftSplit = nodeIsLeft || (correspondingTree->left == nullptr);
+        bool leftSplit = nodeIsLeft || correspondingTree->isLeftOfPivot;
         if (parentNode->label == PRIME) {
-            refineByPrimeNode(parentNode, leftSplit);
+            refineByPrimeNode(parentNode, leftSplit, maxSubtrees);
         }
         else {
             refineByNonPrimeNode(forest, parentNode, maxSubtrees, leftSplit);
@@ -608,6 +620,9 @@ TreeList recursion(const Graph& graph, int pivot, vector<vector<int>>& activeEdg
         vector<int> currentIndexMapping = subgraphIndexMappings[i];
         vector<TreeNode*> nodeValueMap(currentSubgraph.getAdjlist().size());
         MD_Tree* tree = new MD_Tree(getModularDecomposition(currentSubgraph, nodeValueMap));
+        if (i == 0) {
+            tree->isLeftOfPivot = true;
+        }
         updateNodeValueMapping(nodeValueMapping, nodeValueMap, currentIndexMapping);
         updateTreeValues(tree->root, currentIndexMapping);
         output->insert(tree);
@@ -820,27 +835,33 @@ MD_Tree getModularDecomposition(const Graph& graph, vector<TreeNode*>& nodeValue
     }
 
     if (graph.isConnected()) {
-        int pivot = 0;
+        int pivot = 1;
         vector<vector<int>> activeEdges;
         vector<bool> leftNodes;
 
         TreeList forest = recursion(graph, pivot, activeEdges, leftNodes, nodeValueMapping);
 
-        /*cout << "After Recursion: " << endl;
-        forest.print();
-        cout << endl;*/
+        if (graph.getAdjlist().size() == 8) {
+            cout << "After Recursion: " << endl;
+            forest.print();
+            cout << endl;
+        }
 
         refinement(graph, nodeValueMapping, pivot, forest, activeEdges, leftNodes);
 
-        /*cout << "After Refinement: " << endl;
-        forest.print();
-        cout << endl;*/
+        if (graph.getAdjlist().size() == 8) {
+            cout << "After Refinement: " << endl;
+            forest.print();
+            cout << endl;
+        }
 
         vector<MD_Tree> forestVec = promotion(forest);
 
-        /*cout << "After Promotion: " << endl;
-        printForest(forestVec);
-        cout << endl;*/
+        if (graph.getAdjlist().size() == 8) {
+            cout << "After Promotion: " << endl;
+            printForest(forestVec);
+            cout << endl;
+        }
 
         MD_Tree finalResult = assembly(forestVec, graph, nodeValueMapping, pivot);
         resetTimestamps(finalResult.root);
@@ -871,8 +892,8 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
 
 /**
-* The main method. Doesn't do that much.
-
+* The main method.
+*/
 int main(int argc, char* argv[]) {
     string adjList = "";
     if (argc >= 2) {
@@ -898,7 +919,7 @@ int main(int argc, char* argv[]) {
 
     auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
 
-
+    Util::sortTree(mdTree);
     cout << "The final MD-tree: " << endl << endl;
     printTree(mdTree.root);
 
@@ -917,21 +938,39 @@ int main(int argc, char* argv[]) {
     << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
 
     cout << output << endl;
-}*/
-
-int main() {
-    MD_Tree tree = Util::createRandomModularDecompositionTree(10, true);
-    Util::sortTree(tree);
-    cout << endl << endl;
-    Graph graph = Util::createGraphFromTree(tree);
-    graph.print();
-    MD_Tree mdTree = getModularDecomposition(graph);
-    Util::sortTree(mdTree);
-    cout << "Initial MD_Tree:" << endl;
-    printTree(tree.root);
-    cout << endl << endl;
-    cout << "Calculated MD_Tree:" << endl;
-    printTree(mdTree.root);
 }
 
+/*
+int main() {
+    int nRepetitions = 500;
+    int nVertices = 30;
+    bool useCoGraphs = false;
 
+    int equalCounter = 0;
+    for (int i = 0; i < nRepetitions; i++) {
+
+        MD_Tree tree = Util::createRandomModularDecompositionTree(nVertices, useCoGraphs);
+        Util::sortTree(tree);
+        Graph graph = Util::createGraphFromTree(tree);
+        MD_Tree mdTree = getModularDecomposition(graph);
+        Util::sortTree(mdTree);
+
+        string tree1Representation = generateTreeString(tree.root);
+        string tree2Representation = generateTreeString(mdTree.root);
+        if (tree1Representation.compare(tree2Representation) == 0) {
+            equalCounter++;
+        } else {
+            cout << "Not equal:" << endl;
+
+            graph.print();
+            cout << "Initial MD_Tree:" << endl;
+            printTree(tree.root);
+            cout << endl << endl;
+            cout << "Calculated MD_Tree:" << endl;
+            printTree(mdTree.root);
+            cout << endl;
+        }
+    }
+    cout << endl << "Equal: " << equalCounter << endl;
+}
+*/

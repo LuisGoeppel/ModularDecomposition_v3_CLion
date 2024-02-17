@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <string>
 #include <vector>
 #include <unordered_set>
 #include <set>
@@ -43,6 +44,8 @@ struct MD_Tree {
     int leftIndex;
     int rightIndex;
 
+    bool isLeftOfPivot;
+
     MD_Tree(TreeNode* r);
     MD_Tree();
 };
@@ -58,8 +61,10 @@ void setSibling(TreeNode* lhs, TreeNode* rhs);
 void setNeighbor(MD_Tree* lhs, MD_Tree* rhs);
 
 void printTree(const TreeNode* node, int depth = 0);
+string generateTreeString(const TreeNode* node, int depth = 0);
 vector<int> getPreOrderLeafs(const TreeNode* root);
 void resetTimestamps(TreeNode* root);
+int getMaxLeafValue(const TreeNode* node);
 
 unordered_set<TreeNode*> getMaxContSubTrees(const vector<TreeNode*>& treeNodes,
     int currentTimestamp);
