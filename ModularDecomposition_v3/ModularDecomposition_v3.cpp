@@ -252,6 +252,7 @@ vector<MD_Tree> getPromotedTree(TreeNode* root) {
 
         while (markedChild != nullptr) {
             if (markedChild->markedLeft) {
+                TreeNode* oldSibling = markedChild->sibling;
                 if (previous == root) {
                     root->child = markedChild->sibling;
                 }
@@ -263,9 +264,11 @@ vector<MD_Tree> getPromotedTree(TreeNode* root) {
                 markedChild->sibling = nullptr;
                 vector<MD_Tree> left = getPromotedTree(markedChild);
                 forest.insert(forest.end(), left.begin(), left.end());
+                markedChild = oldSibling;
+            } else {
+                previous = markedChild;
+                markedChild = markedChild->sibling;
             }
-            previous = markedChild;
-            markedChild = markedChild->sibling;
         }
     }
     forest.push_back(MD_Tree(root));
@@ -275,6 +278,7 @@ vector<MD_Tree> getPromotedTree(TreeNode* root) {
 
         while (markedChild != nullptr) {
             if (markedChild->markedRight) {
+                TreeNode* oldSibling = markedChild->sibling;
                 if (previous == root) {
                     root->child = markedChild->sibling;
                 }
@@ -286,9 +290,11 @@ vector<MD_Tree> getPromotedTree(TreeNode* root) {
                 markedChild->sibling = nullptr;
                 vector<MD_Tree> right = getPromotedTree(markedChild);
                 forest.insert(forest.end(), right.begin(), right.end());
+                markedChild = oldSibling;
+            } else {
+                previous = markedChild;
+                markedChild = markedChild->sibling;
             }
-            previous = markedChild;
-            markedChild = markedChild->sibling;
         }
     }
     return forest;
@@ -344,6 +350,7 @@ void cleanUp(vector<MD_Tree>& forest) {
             newTreeList.push_back(MD_Tree(tree.root));
         }
     }
+
     for (MD_Tree& tree : newTreeList) {
         deleteMarks(tree.root);
     }
@@ -897,7 +904,7 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
 /**
 * The main method.
-
+*/
 int main(int argc, char* argv[]) {
     string adjList = "";
     if (argc >= 2) {
@@ -923,10 +930,14 @@ int main(int argc, char* argv[]) {
 
     auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
 
+    /*
     Util::sortTree(mdTree);
     cout << "The final MD-tree: " << endl << endl;
     printTree(mdTree.root);
 
+    cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
+    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
+     */
 
     string output = "ModularDecomposition,";
     if (Util::testModularDecompositionTree(graph, mdTree)) {
@@ -937,17 +948,18 @@ int main(int argc, char* argv[]) {
     }
     output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
     output += to_string(duration.count());
-
-    cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
-    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
-
     cout << output << endl;
-}*/
+}
 
-
-int main() {
-    int nRepetitions = 1000;
-    int nVertices = 34;
+/**
+ * Tests the correctness of the modular decomposition algorithm by randomly generating modular decomposition trees
+ * of a specific size. These random trees get converted into adjacency-lists, which will be used by the modular decomposition
+ * algorithm to compute a modular decomposition tree. This tree then gets compared to the initial MD-Tree. Multiple
+ * repetitions of this process ensure the algorithms correctness.
+ */
+void testModularDecomposition () {
+    int nRepetitions = 100;
+    int nVertices = 25;
     bool useCoGraphs = false;
 
     int equalCounter = 0;
@@ -961,13 +973,14 @@ int main() {
 
         string tree1Representation = generateTreeString(tree.root);
         string tree2Representation = generateTreeString(mdTree.root);
-        if (tree1Representation.compare(tree2Representation) == 0) {
+        if (tree1Representation == tree2Representation) {
             equalCounter++;
-            if (equalCounter % 100 == 0) {
+            if (equalCounter % 10 == 0) {
                 cout << endl << "Equal: " << equalCounter << " of " << (i + 1) << endl;
             }
         } else {
             cout << "Not equal:" << endl;
+            Util::testModularDecompositionTree(graph, mdTree);
 
             graph.print();
             cout << "Initial MD_Tree:" << endl;

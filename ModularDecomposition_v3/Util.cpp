@@ -211,8 +211,8 @@ vector<int> Util::getInverse(const vector<int>& vec)
 */
 TreeNode* Util::getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs)
 {
-    TreeNode* lhsNode = getCorrspondingTreeNode(tree.root, lhs);
-    TreeNode* rhsNode = getCorrspondingTreeNode(tree.root, rhs);
+    TreeNode* lhsNode = getCorrespondingTreeNode(tree.root, lhs);
+    TreeNode* rhsNode = getCorrespondingTreeNode(tree.root, rhs);
     TreeNode* currentAncestor = lhsNode->parent;
     TreeNode* ancestorChildLhs = lhsNode;
 
@@ -234,17 +234,17 @@ TreeNode* Util::getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs)
  * @param node The target node.
  * @return The corresponding tree node.
  */
-TreeNode* Util::getCorrspondingTreeNode(TreeNode* currentNode, int node)
+TreeNode* Util::getCorrespondingTreeNode(TreeNode* currentNode, int node)
 {
     if (currentNode->value == node) {
         return currentNode;
     }
     TreeNode* out = nullptr;
     if (currentNode->child != nullptr) {
-        out = getCorrspondingTreeNode(currentNode->child, node);
+        out = getCorrespondingTreeNode(currentNode->child, node);
     }
     if (currentNode->sibling != nullptr && out == nullptr) {
-        out = getCorrspondingTreeNode(currentNode->sibling, node);
+        out = getCorrespondingTreeNode(currentNode->sibling, node);
     }
     return out;
 }
@@ -404,7 +404,7 @@ Graph Util::createGraphFromTree(const MD_Tree& tree) {
         for (int rhs = 0; rhs < nVertices; rhs++) {
             if (lhs != rhs) {
 
-                TreeNode* lhsNode = getCorrspondingTreeNode(tree.root, lhs);
+                TreeNode* lhsNode = getCorrespondingTreeNode(tree.root, lhs);
                 TreeNode* currentAncestor = lhsNode->parent;
                 while (currentAncestor != nullptr) {
                     vector<int> currentLeafNodes = getPreOrderLeafs(currentAncestor);

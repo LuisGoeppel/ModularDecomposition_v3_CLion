@@ -32,7 +32,7 @@ private:
     static void sortTreeHelper(TreeNode* node);
     static vector<int> getInverse(const vector<int>& vec);
     static TreeNode* getCommonAncestorChildLhs(const MD_Tree& tree, int lhs, int rhs);
-    static TreeNode* getCorrspondingTreeNode(TreeNode* currentNode, int node);
+    static TreeNode* getCorrespondingTreeNode(TreeNode* currentNode, int node);
     static void checkChildNodeValuesHelper(TreeNode* node);
     static int removeFalseInnerNodes(TreeNode* currentNode, TreeNode* callingNode, bool isParent);
     static void getHighestVertexValue(TreeNode* node, int& highestValue);
