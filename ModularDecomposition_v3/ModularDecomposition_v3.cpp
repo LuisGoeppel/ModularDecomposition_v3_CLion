@@ -903,55 +903,6 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
 
 /**
-* The main method.
-*/
-int main(int argc, char* argv[]) {
-    string adjList = "";
-    if (argc >= 2) {
-        string filePath = argv[1];
-        adjList = readFile(filePath);
-    } else {
-        cout << "Please provide valid arguments!" << endl;
-        return 1;
-    }
-    vector<int> indexMapping;
-
-    if (!Util::isConsecutivelyOrdered(adjList)) {
-        vector<int> indexMapping = Util::rewriteAdjacencyList(adjList);
-    }
-
-    Graph graph = Graph(adjList);
-    int nVertices = Util::getNumberVertices(graph);
-    int nEdges = Util::getNumberEdges(graph);
-
-    auto start = chrono::high_resolution_clock::now();
-    MD_Tree mdTree = getModularDecomposition(graph);
-    auto end = chrono::high_resolution_clock::now();
-
-    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
-
-    /*
-    Util::sortTree(mdTree);
-    cout << "The final MD-tree: " << endl << endl;
-    printTree(mdTree.root);
-
-    cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
-    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
-     */
-
-    string output = "ModularDecomposition,";
-    if (Util::testModularDecompositionTree(graph, mdTree)) {
-        output += "0,";
-    }
-    else {
-        output += "1,";
-    }
-    output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
-    output += to_string(duration.count());
-    cout << output << endl;
-}
-
-/**
  * Tests the correctness of the modular decomposition algorithm by randomly generating modular decomposition trees
  * of a specific size. These random trees get converted into adjacency-lists, which will be used by the modular decomposition
  * algorithm to compute a modular decomposition tree. This tree then gets compared to the initial MD-Tree. Multiple
@@ -994,3 +945,66 @@ void testModularDecomposition () {
     cout << endl << "Equal: " << equalCounter << endl;
     cout << "Not Equal: " << (nRepetitions - equalCounter) << endl;
 }
+
+
+/**
+ * Executes the modular decomposition for the graph given as adjacency list in the Graph.txt file.
+ *
+ * @param argc The number of arguments .
+ * @param argv The arguments.
+ */
+void executeModularDecomposition(int argc, char* argv[]) {
+    string adjList;
+    if (argc >= 2) {
+        string filePath = argv[1];
+        adjList = readFile(filePath);
+    } else {
+        cout << "Please provide valid arguments!" << endl;
+        return;
+    }
+    vector<int> indexMapping;
+
+    if (!Util::isConsecutivelyOrdered(adjList)) {
+        vector<int> indexMapping = Util::rewriteAdjacencyList(adjList);
+    }
+
+    Graph graph = Graph(adjList);
+    int nVertices = Util::getNumberVertices(graph);
+    int nEdges = Util::getNumberEdges(graph);
+
+    auto start = chrono::high_resolution_clock::now();
+    MD_Tree mdTree = getModularDecomposition(graph);
+    auto end = chrono::high_resolution_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
+
+    /*
+    Util::sortTree(mdTree);
+    cout << "The final MD-tree: " << endl << endl;
+    printTree(mdTree.root);
+
+    cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
+    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
+     */
+
+    string output = "ModularDecomposition,";
+    if (Util::testModularDecompositionTree(graph, mdTree)) {
+        output += "0,";
+    }
+    else {
+        output += "1,";
+    }
+    output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
+    output += to_string(duration.count());
+    cout << output << endl;
+}
+
+
+/**
+* The main method.
+*/
+int main(int argc, char* argv[]) {
+    executeModularDecomposition(argc, argv);
+    //testModularDecomposition();
+}
+
