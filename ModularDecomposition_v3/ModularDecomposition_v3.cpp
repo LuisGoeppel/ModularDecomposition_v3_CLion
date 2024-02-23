@@ -903,54 +903,10 @@ MD_Tree getModularDecomposition(const Graph& graph) {
 
 
 /**
- * Tests the correctness of the modular decomposition algorithm by randomly generating modular decomposition trees
- * of a specific size. These random trees get converted into adjacency-lists, which will be used by the modular decomposition
- * algorithm to compute a modular decomposition tree. This tree then gets compared to the initial MD-Tree. Multiple
- * repetitions of this process ensure the algorithms correctness.
- */
-void testModularDecomposition () {
-    int nRepetitions = 100;
-    int nVertices = 25;
-    bool useCoGraphs = false;
-
-    int equalCounter = 0;
-    for (int i = 0; i < nRepetitions; i++) {
-
-        MD_Tree tree = Util::createRandomModularDecompositionTree(nVertices, useCoGraphs);
-        Util::sortTree(tree);
-        Graph graph = Util::createGraphFromTree(tree);
-        MD_Tree mdTree = getModularDecomposition(graph);
-        Util::sortTree(mdTree);
-
-        string tree1Representation = generateTreeString(tree.root);
-        string tree2Representation = generateTreeString(mdTree.root);
-        if (tree1Representation == tree2Representation) {
-            equalCounter++;
-            if (equalCounter % 10 == 0) {
-                cout << endl << "Equal: " << equalCounter << " of " << (i + 1) << endl;
-            }
-        } else {
-            cout << "Not equal:" << endl;
-            Util::testModularDecompositionTree(graph, mdTree);
-
-            graph.print();
-            cout << "Initial MD_Tree:" << endl;
-            printTree(tree.root);
-            cout << endl << endl;
-            cout << "Calculated MD_Tree:" << endl;
-            printTree(mdTree.root);
-            cout << endl;
-        }
-    }
-    cout << endl << "Equal: " << equalCounter << endl;
-    cout << "Not Equal: " << (nRepetitions - equalCounter) << endl;
-}
-
-
-/**
- * Executes the modular decomposition for the graph given as adjacency list in the Graph.txt file.
+ * Executes the modular decomposition algorithm for the graph given in the Graph.txt file.
+ * This file has to contain the adjacency list of the graph.
  *
- * @param argc The number of arguments .
+ * @param argc The number of arguments.
  * @param argv The arguments.
  */
 void executeModularDecomposition(int argc, char* argv[]) {
@@ -965,30 +921,29 @@ void executeModularDecomposition(int argc, char* argv[]) {
     vector<int> indexMapping;
 
     if (!Util::isConsecutivelyOrdered(adjList)) {
-        vector<int> indexMapping = Util::rewriteAdjacencyList(adjList);
+        indexMapping = Util::rewriteAdjacencyList(adjList);
     }
 
     Graph graph = Graph(adjList);
     int nVertices = Util::getNumberVertices(graph);
     int nEdges = Util::getNumberEdges(graph);
+    vector<TreeNode*> nodeValueMapping(graph.getAdjlist().size());
 
     auto start = chrono::high_resolution_clock::now();
-    MD_Tree mdTree = getModularDecomposition(graph);
+    MD_Tree mdTree = getModularDecomposition(graph, nodeValueMapping);
     auto end = chrono::high_resolution_clock::now();
 
     auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
 
-    /*
-    Util::sortTree(mdTree);
+    /*Util::sortTree(mdTree);
     cout << "The final MD-tree: " << endl << endl;
     printTree(mdTree.root);
 
     cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
-    << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;
-     */
+         << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;*/
 
     string output = "ModularDecomposition,";
-    if (Util::testModularDecompositionTree(graph, mdTree)) {
+    if (Util::testModularDecompositionTree(graph, mdTree, nodeValueMapping)) {
         output += "0,";
     }
     else {
@@ -997,6 +952,80 @@ void executeModularDecomposition(int argc, char* argv[]) {
     output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
     output += to_string(duration.count());
     cout << output << endl;
+}
+
+
+/**
+ * Tests the correctness of the modular decomposition algorithm by randomly generating modular decomposition trees
+ * of a specific size. These random trees get converted into adjacency-lists, which will be used by the modular decomposition
+ * algorithm to compute a modular decomposition tree. This tree then gets compared to the initial MD-Tree. Multiple
+ * repetitions of this process ensure the algorithms correctness.
+ *
+ * @param nRepetitions The number of repetitions.
+ * @param nVertices The number of vertices in each graph.
+ * @param useCoGraphs If the generated graphs should be cographs.
+ */
+void testModularDecomposition (int nRepetitions, int nVertices, bool useCoGraphs) {
+    int equalCounter = 0;
+    for (int i = 0; i < nRepetitions; i++) {
+        vector<TreeNode*> nodeValueMapping(nVertices);
+
+        auto startGenerate = chrono::high_resolution_clock::now();
+        MD_Tree tree = Util::createRandomModularDecompositionTree(nVertices, useCoGraphs, nodeValueMapping);
+        auto endGenerate = chrono::high_resolution_clock::now();
+
+        auto startSort= chrono::high_resolution_clock::now();
+        Util::sortTree(tree);
+        auto endSort= chrono::high_resolution_clock::now();
+
+        auto startCreateGraph= chrono::high_resolution_clock::now();
+        Graph graph = Util::createGraphFromTree(tree, nodeValueMapping);
+        auto endCreateGraph= chrono::high_resolution_clock::now();
+
+        auto startModularDecomposition= chrono::high_resolution_clock::now();
+        MD_Tree mdTree = getModularDecomposition(graph);
+        auto endModularDecomposition= chrono::high_resolution_clock::now();
+
+        auto startTestTree = chrono::high_resolution_clock::now();
+        /*if (!Util::testModularDecompositionTree(graph, mdTree, nodeValueMapping)) {
+            cout << "Wrong! Calculated Tree is wrong!" << endl;
+        }*/
+        auto endTestTree = chrono::high_resolution_clock::now();
+
+        Util::sortTree(mdTree);
+
+        string tree1Representation = generateTreeString(tree.root);
+        string tree2Representation = generateTreeString(mdTree.root);
+        if (tree1Representation == tree2Representation) {
+            equalCounter++;
+        } else {
+            cout << "Not equal:" << endl;
+            Util::testModularDecompositionTree(graph, mdTree, nodeValueMapping);
+
+            graph.print();
+            cout << "Initial MD_Tree:" << endl;
+            printTree(tree.root);
+            cout << endl << endl;
+            cout << "Calculated MD_Tree:" << endl;
+            printTree(mdTree.root);
+            cout << endl;
+        }
+
+        auto durationGenerate= chrono::duration_cast<chrono::microseconds>(endGenerate - startGenerate);
+        auto durationSort= chrono::duration_cast<chrono::microseconds>(endSort - startSort);
+        auto durationModularDecomposition= chrono::duration_cast<chrono::microseconds>(endModularDecomposition - startModularDecomposition);
+        auto durationCreateGraph= chrono::duration_cast<chrono::microseconds>(endCreateGraph - startCreateGraph);
+        auto durationTestTree= chrono::duration_cast<chrono::microseconds>(endTestTree - startTestTree);
+
+        /*cout << "Time needed for MD_Tree-Generation: " << durationGenerate.count() << " microseconds" << endl;
+        cout << "Time needed for Tree-Sorting: " << durationSort.count() << " microseconds" << endl;
+        cout << "Time needed for Graph-Creation: " << durationCreateGraph.count() << " microseconds" << endl;
+        cout << "Time needed for MD_Tree-Calculation: " << durationModularDecomposition.count() << " microseconds" << endl;
+        cout << "Time needed for MD_Tree-Testing: " << durationTestTree.count() << " microseconds" << endl;*/
+    }
+    cout << endl << "Using " << to_string(nVertices) << " vertices:" << endl;
+    cout << "Equal: " << equalCounter <<endl;
+    cout << "Not Equal: " << (nRepetitions - equalCounter) << endl;
 }
 
 
