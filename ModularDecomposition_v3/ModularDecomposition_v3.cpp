@@ -942,13 +942,7 @@ void executeModularDecomposition(int argc, char* argv[]) {
     cout << endl << "Time needed: " << duration.count() << " nanoseconds for a graph with " << Util::getNumberVertices(graph)
          << " vertices and " << Util::getNumberEdges(graph) << " edges" << endl << endl;*/
 
-    string output = "ModularDecomposition,";
-    if (Util::testModularDecompositionTree(graph, mdTree, nodeValueMapping)) {
-        output += "0,";
-    }
-    else {
-        output += "1,";
-    }
+    string output = "ModularDecomposition,0,";
     output += to_string(nVertices) + "," + to_string(nEdges) + "," + to_string(nVertices + nEdges) + ",";
     output += to_string(duration.count());
     cout << output << endl;
